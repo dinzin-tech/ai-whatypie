@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="refresh" content="0; url=virtual-server.html" />
+  <title>Page moved — Wapto documentation</title>
+  <link rel="icon" href="assets/images/favicon.png" type="image/png" />
+  <link rel="stylesheet" type="text/css" href="assets/css/vendors/bootstrap.css" />
+  <link rel="stylesheet" type="text/css" href="assets/css/style.css" />
+  <link rel="stylesheet" type="text/css" href="assets/css/docs-custom.css" />
+</head>
+<body style="padding: 2.5rem; max-width: 42rem; margin: 0 auto;">
+  <h1>Live Server guide moved</h1>
+  <p>
+    This page is no longer maintained. Use
+    <a href="virtual-server.html"><strong>Backend → Virtual Private Server</strong></a>
+    for production VPS deployment.
+  </p>
+  <p>
+    <strong>Removed:</strong> the old browser install wizard (<code>/install</code>, <code>install.html</code>)
+    and Envato license steps. Wapto is ready after deploy or manual setup plus database seeding.
+  </p>
+  <p>
+    After the API is running, seed the database from <code>Wapto-api</code>:
+  </p>
+  <pre><code>npm run seed</code></pre>
+  <p>
+    Then open your <strong>admin</strong> URL and sign in with the Super Admin account created by the seeder.
+    See <a href="database-seeding.html">Database Seeding</a> for details.
+  </p>
+  <p><a href="index.html">← Back to documentation home</a></p>
+</body>
+</html>
