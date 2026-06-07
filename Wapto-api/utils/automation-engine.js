@@ -1460,6 +1460,7 @@ class AutomationEngine {
       ...execution.input_data,
       [variableName]: messageText,
       last_message: messageText,
+      message: messageText, // patch for failing flow after whatsapp button click
       messagePayload
     };
 
