@@ -6,14 +6,62 @@ import { Input } from "@/src/elements/ui/input";
 import { Label } from "@/src/elements/ui/label";
 import { Textarea } from "@/src/elements/ui/textarea";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
-import { CheckSquare, Plus, X } from "lucide-react";
+import { CheckSquare, Copy, Check, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BaseNode } from "./BaseNode";
 import { NodeField } from "./NodeField";
 
+/** Computes the same flowPrefix + backendId that Flow.tsx uses when saving */
+function computeButtonId(flowId: string, nodeId: string, btnVal: string): string {
+  const flowPrefix = flowId ? `f${flowId.slice(-6)}` : "";
+  // Mirror getBackendId logic for button_message nodes (prefix = "send_message-")
+  let backendId = nodeId;
+  if (!backendId.startsWith("send_message-")) {
+    if (backendId.startsWith("button_message-")) {
+      backendId = `send_message-${backendId.slice("button_message-".length)}`;
+    } else {
+      backendId = `send_message-${backendId}`;
+    }
+  }
+  if (!flowPrefix) return `${backendId}___${btnVal}`;
+  return `${flowPrefix}___${backendId}___${btnVal}`;
+}
+
+function CopyBadge({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  if (!text) return null;
+
+  return (
+    <div className="mt-1.5 flex items-center gap-1.5 rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/40 px-2 py-1">
+      <span className="text-[9px] font-mono text-emerald-700 dark:text-emerald-400 truncate flex-1 leading-tight" title={text}>
+        ID: {text}
+      </span>
+      <button
+        onClick={handleCopy}
+        className="shrink-0 text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+        title="Copy button ID"
+      >
+        {copied ? <Check size={11} /> : <Copy size={11} />}
+      </button>
+    </div>
+  );
+}
+
 export function ButtonMessageNode({ data, id }: any) {
   const { setNodes } = useReactFlow();
   const [touched, setTouched] = useState(false);
+
+  const flowId: string = data._flowId || "";
+  const nodeId: string = data._nodeId || id;
 
   const updateNodeData = (field: string, value: any) => {
     if (!touched) setTouched(true);
@@ -85,22 +133,28 @@ export function ButtonMessageNode({ data, id }: any) {
           <span className="text-[10px] font-medium text-gray-400">{data.buttons?.length || 0} / 3</span>
         </div>
 
-        {(data.buttons || []).map((btn: any, index: number) => (
-          <div key={index} className="relative group rounded-lg border border-gray-100 bg-gray-50/50 p-3 pt-6 dark:bg-(--card-color) dark:border-(--card-border-color)">
-            <Handle type="source" id={`src-btn-${index}`} position={Position.Right} style={{ top: "50%" }} className="w-3! h-3! bg-emerald-500! border-2! border-white! dark:border-(--card-border-color)! shadow-sm z-50" />
+        {(data.buttons || []).map((btn: any, index: number) => {
+          const btnVal = `btn_${index + 1}`;
+          const fullId = computeButtonId(flowId, nodeId, btnVal);
+          return (
+            <div key={index} className="relative group rounded-lg border border-gray-100 bg-gray-50/50 p-3 pt-6 dark:bg-(--card-color) dark:border-(--card-border-color)">
+              <Handle type="source" id={`src-btn-${index}`} position={Position.Right} style={{ top: "50%" }} className="w-3! h-3! bg-emerald-500! border-2! border-white! dark:border-(--card-border-color)! shadow-sm z-50" />
 
-            <button onClick={() => removeButton(index)} className="absolute -right-1.5 -top-2.25 p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
-              <X size={12} />
-            </button>
-            <div className="absolute left-3 top-2 text-[10px] font-bold text-gray-400 uppercase tracking-tight">Option {index + 1}</div>
+              <button onClick={() => removeButton(index)} className="absolute -right-1.5 -top-2.25 p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
+                <X size={12} />
+              </button>
+              <div className="absolute left-3 top-2 text-[10px] font-bold text-gray-400 uppercase tracking-tight">Option {index + 1}</div>
 
-            <div className="space-y-2">
-              <div>
-                <Input value={btn.text} onFocus={() => setTouched(true)} onChange={(e) => updateButton(index, "text", e.target.value)} placeholder="Button Label (Quick choice)" className="h-8 text-xs bg-white dark:bg-(--page-body-bg)" maxLength={20} />
+              <div className="space-y-2">
+                <div>
+                  <Input value={btn.text} onFocus={() => setTouched(true)} onChange={(e) => updateButton(index, "text", e.target.value)} placeholder="Button Label (Quick choice)" className="h-8 text-xs bg-white dark:bg-(--page-body-bg)" maxLength={20} />
+                </div>
+                {/* Show computed button ID so user can copy it for use in triggers */}
+                <CopyBadge text={fullId} />
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {(!data.buttons || data.buttons.length < 3) && (
           <Button onClick={addButton} variant="outline" className="w-full h-9 border-dashed border-gray-200 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:border-dark-accent dark:text-emerald-500 dark:hover:bg-emerald-900/10 text-[11px] font-semibold">

@@ -74,10 +74,12 @@ const FlowCanvas = () => {
         data: {
           ...node.data,
           forceValidation,
+          _flowId: flowId || "",
         },
       }))
     );
-  }, [forceValidation, setNodes]);
+  }, [forceValidation, setNodes, flowId]);
+
 
   const validateFlow = useCallback(() => {
     if (nodes.length === 0) return false;
@@ -181,6 +183,8 @@ const FlowCanvas = () => {
               keywords: keywords || [],
               triggerType: params.triggerType || "contains keyword",
               contactType: params.contactType || "Contact",
+              _flowId: flowId || "",
+              _nodeId: n.id,
               // Restore location params if present
               ...(params.location_params
                 ? {
@@ -199,6 +203,7 @@ const FlowCanvas = () => {
                 : {}),
             },
           };
+
         });
 
       // Filter and remap edges to bypass the condition node
@@ -889,8 +894,10 @@ const FlowCanvas = () => {
             y: event.clientY,
           });
 
+          const nodeTimestamp = Date.now();
+          const newNodeId = `${template.id}-${nodeTimestamp}`;
           const newNode: Node = {
-            id: `${template.id}-${Date.now()}`,
+            id: newNodeId,
             type: "custom",
             data: {
               nodeType: template.id,
@@ -900,6 +907,8 @@ const FlowCanvas = () => {
               messageType: "Simple text",
               message: "",
               forceValidation: false,
+              _flowId: flowId || "",
+              _nodeId: newNodeId,
               ...(template.id === "trigger" ? { contactType: "Contact", triggerType: "contains keyword", keywords: [] } : {}),
               ...(template.id === "call_to_action" ? { buttonText: "Visit our site", valueText: "", buttonLink: "https://", header: "" } : {}),
             },
@@ -907,6 +916,7 @@ const FlowCanvas = () => {
           };
 
           setNodes((nds) => [...nds, newNode]);
+
         }}
       >
         <div className="absolute left-1/2 top-3 z-30 flex flex-nowrap w-[calc(100%-1.5rem)] -translate-x-1/2 items-center justify-between gap-2 rounded-xl p-1.5 shadow-2xl border border-white/20 dark:border-white/10 bg-white/80 backdrop-blur-md dark:bg-(--card-color) md:top-4 md:w-auto md:min-w-[400px] md:gap-4 md:p-2">
