@@ -42,6 +42,7 @@ const automationFlowSchema = new mongoose.Schema({
             'send_message',
             'send_template',
             'add_tag',
+            'notify_agent',
             'cta_button',
             'assign_chatbot',
             'update_contact',
@@ -53,6 +54,7 @@ const automationFlowSchema = new mongoose.Schema({
             'wait_for_reply',
             'custom'
           ]
+
         },
         position: {
           x: { type: Number, default: 0 },
