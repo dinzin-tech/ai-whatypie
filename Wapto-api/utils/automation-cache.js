@@ -12,7 +12,7 @@ class AutomationCache {
 
   setFlow(flowId, flowData) {
     const plainFlowData = flowData && typeof flowData.toObject === 'function'
-      ? flowData.toObject()
+      ? flowData.toObject({ virtuals: false })
       : flowData;
     return this.flowCache.set(flowId, plainFlowData);
   }
@@ -30,7 +30,7 @@ class AutomationCache {
 
   setExecution(executionId, executionData) {
     const plainExecutionData = executionData && typeof executionData.toObject === 'function'
-      ? executionData.toObject()
+      ? executionData.toObject({ virtuals: false })
       : executionData;
     return this.executionCache.set(executionId, plainExecutionData);
   }
