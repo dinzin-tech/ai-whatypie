@@ -51,7 +51,7 @@ class AutomationEngine {
       for (const trigger of orderTriggers) {
         let flow = automationCache.getFlow(trigger.flow_id.toString());
         if (!flow) {
-          flow = await AutomationFlow.findById(trigger.flow_id).populate('user_id');
+          flow = await AutomationFlow.findById(trigger.flow_id).populate('user_id').lean();
           if (flow) {
             automationCache.setFlow(trigger.flow_id.toString(), flow);
             console.log(`Loaded flow from DB and cached: ${trigger.flow_id}`);
@@ -148,7 +148,7 @@ class AutomationEngine {
 
       if (waitingExecution) {
         console.log(`Found waiting execution ${waitingExecution._id} for ${senderNumber}. Resuming...`);
-        const flow = await AutomationFlow.findById(waitingExecution.flow_id).populate('user_id');
+        const flow = await AutomationFlow.findById(waitingExecution.flow_id).populate('user_id').lean();
         if (flow) {
           return await this.resumeExecution(flow, waitingExecution, eventData, normalizedMessagePayload);
         }
@@ -158,7 +158,7 @@ class AutomationEngine {
         console.log(`Processing trigger:`, trigger);
         let flow = automationCache.getFlow(trigger.flow_id.toString());
         if (!flow) {
-          flow = await AutomationFlow.findById(trigger.flow_id).populate('user_id');
+          flow = await AutomationFlow.findById(trigger.flow_id).populate('user_id').lean();
           if (flow) {
             automationCache.setFlow(trigger.flow_id.toString(), flow);
             console.log(`Loaded flow from DB and cached: ${trigger.flow_id}`);
@@ -561,6 +561,13 @@ class AutomationEngine {
 
     if (!field || !operator || value === undefined) {
       return false;
+    }
+
+    if ((field === 'event_type' || field === 'eventType') && value === 'message_received') {
+      const isInteractive = data.interactive_id || (data.message && String(data.message).includes('___')) || data.messageType === 'interactive';
+      if (isInteractive) {
+        return false;
+      }
     }
 
     const fieldValue = this.getNestedValue(data, field);

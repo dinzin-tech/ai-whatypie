@@ -356,7 +356,7 @@ const FlowCanvas = () => {
               sectionTitle: (node.data.sections || [])[0]?.title || "Options",
               items: (node.data.sections || []).flatMap((section: any) =>
                 (section.items || []).map((item: any) => {
-                  const uniqueId = `${flowPrefix}___${item.title}`;
+                  const uniqueId = `${flowPrefix}___${getBackendId(node)}___${item.title}`;
                   return { id: uniqueId, title: item.title, description: item.description || "" };
                 })
               ),
@@ -371,7 +371,7 @@ const FlowCanvas = () => {
             parameters.interactive_type = "button";
             parameters.button_params = (node.data.buttons || []).map((btn: any) => {
               const rawVal = btn.value || btn.text;
-              const uniqueId = `${flowPrefix}___${rawVal}`;
+              const uniqueId = `${flowPrefix}___${getBackendId(node)}___${rawVal}`;
               return { id: uniqueId, title: btn.text };
             });
             parameters.message_template = node.data.message || "";
@@ -491,7 +491,7 @@ const FlowCanvas = () => {
 
           if (button && targetNode) {
             const rawVal = button.value || button.text;
-            const uniqueId = `${flowPrefix}___${rawVal}`;
+            const uniqueId = `${flowPrefix}___${getBackendId(sourceNode)}___${rawVal}`;
 
             addBranch(
               `btn-___${getBackendId(sourceNode)}___${btnIndex}___${getBackendId(targetNode)}`,
@@ -518,7 +518,7 @@ const FlowCanvas = () => {
 
           if (item && targetNode) {
             const rawVal = item.title;
-            const uniqueId = `${flowPrefix}___${rawVal}`;
+            const uniqueId = `${flowPrefix}___${getBackendId(sourceNode)}___${rawVal}`;
 
             addBranch(
               `list-___${getBackendId(sourceNode)}___${sIdx}___${iIdx}___${getBackendId(targetNode)}`,
@@ -589,14 +589,14 @@ const FlowCanvas = () => {
           if (n.data.nodeType === "button_message") {
             (n.data.buttons || []).forEach((b: any) => {
               const rawVal = b.value || b.text;
-              const uniqueId = `${flowPrefix}___${rawVal}`;
+              const uniqueId = `${flowPrefix}___${getBackendId(n)}___${rawVal}`;
               if (uniqueId && !keywords.includes(uniqueId)) keywords.push(uniqueId);
             });
           } else if (n.data.nodeType === "list_message") {
             (n.data.sections || []).forEach((section: any) => {
               (section.items || []).forEach((item: any) => {
                 const rawVal = item.title;
-                const uniqueId = `${flowPrefix}___${rawVal}`;
+                const uniqueId = `${flowPrefix}___${getBackendId(n)}___${rawVal}`;
                 if (uniqueId && !keywords.includes(uniqueId)) keywords.push(uniqueId);
               });
             });

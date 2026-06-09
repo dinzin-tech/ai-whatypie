@@ -8,14 +8,14 @@ import unifiedWhatsAppService from '../services/whatsapp/unified-whatsapp.servic
 
 const OBJECT_ID_REGEX = /^[a-f0-9]{24}$/i;
 
-const isNewVariablesFormat = (mapping) => {
+export const isNewVariablesFormat = (mapping) => {
   if (!mapping || typeof mapping !== 'object') return false;
   const keys = Object.keys(mapping);
   if (keys.length === 0) return false;
   return keys.some((k) => !OBJECT_ID_REGEX.test(k));
 };
 
-const resolveVariablesForContact = (mapping, contact) => {
+export const resolveVariablesForContact = (mapping, contact) => {
   if (!mapping || typeof mapping !== 'object') return {};
   const result = {};
   for (const [key, value] of Object.entries(mapping)) {
@@ -42,7 +42,7 @@ const resolveVariablesForContact = (mapping, contact) => {
   return result;
 };
 
-const toOrderedTemplateParamValues = (vars) => {
+export const toOrderedTemplateParamValues = (vars) => {
   if (!vars || typeof vars !== 'object') return [];
   const keys = Object.keys(vars);
   keys.sort((a, b) => Number(a) - Number(b));

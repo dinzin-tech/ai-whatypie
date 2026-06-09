@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/src/elements/ui/button";
-import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/src/elements/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/src/elements/ui/dialog";
 import StepRecipients from "@/src/components/campaigns/wizard/StepRecipients";
 import {
   useActivateDripCampaignMutation,
@@ -85,7 +85,7 @@ const DripActivateModal: React.FC<DripActivateModalProps> = ({ open, onClose, ca
           <DialogTitle>Activate drip campaign</DialogTitle>
         </DialogHeader>
 
-        <DialogBody className="overflow-y-auto">
+        <div className="overflow-y-auto p-4">
           <StepRecipients formik={formik} />
 
           {preview && (
@@ -97,7 +97,7 @@ const DripActivateModal: React.FC<DripActivateModalProps> = ({ open, onClose, ca
               )}
             </div>
           )}
-        </DialogBody>
+        </div>
 
         <DialogFooter className="flex flex-wrap gap-2 sm:justify-end">
           <Button variant="outline" onClick={onClose}>

@@ -530,10 +530,8 @@ export const handleIncomingMessage = async (req, res, io = null) => {
 
 
     try {
-      const automationMessage =
-        message.type === "interactive" && interactiveId
-          ? interactiveId
-          : content;
+      const isFlowInteractive = interactiveId && String(interactiveId).includes('___');
+      const automationMessage = isFlowInteractive ? interactiveId : content;
 
       await automationEngine.triggerEvent("message_received", {
         message: automationMessage,
