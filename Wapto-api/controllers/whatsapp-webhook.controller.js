@@ -1,4 +1,5 @@
 import { WhatsappPhoneNumber, Message, EcommerceOrder, User, AppointmentBooking, AppointmentConfig, Contact, FacebookAdCampaign, AutomationFlow } from '../models/index.js';
+import moment from 'moment';
 import {
   isWithinWorkingHours,
   findMatchingBot,
@@ -381,21 +382,38 @@ export const handleIncomingMessage = async (req, res, io = null) => {
               whatsappPhoneNumberId: whatsappPhoneNumber._id
             });
 
-            console.log(`[PIVOTAL] Booking Created: ${booking._id}. Sending status options...`);
+            console.log(`[PIVOTAL] Booking Created: ${booking._id}. Sending confirmation...`);
 
-            if (config.send_confirmation_message !== false) {
-              await appointmentService.sendBookingStatusOptions(
+            // Clear waiting state — booking is done
+            contactDoc.metadata.automation_waiting_type = null;
+            contactDoc.metadata.automation_waiting_config_id = null;
+            contactDoc.markModified('metadata');
+            await contactDoc.save();
+
+            // If a success template is configured, send it
+            if (config.success_template_id) {
+              await appointmentService.sendAppointmentTemplate(
                 whatsappPhoneNumber.user_id,
                 contactDoc._id,
-                booking._id,
+                config.success_template_id,
+                booking,
+                'success',
                 whatsappPhoneNumber._id
               );
             } else {
-              console.log(`[PIVOTAL] Skip confirmation buttons (config limit). Ending flow.`);
-              contactDoc.metadata.automation_waiting_type = null;
-              contactDoc.markModified('metadata');
-              await contactDoc.save();
+              // Fallback: send a friendly plain-text confirmation
+              const { default: unifiedWhatsAppService } = await import('../services/whatsapp/unified-whatsapp.service.js');
+              const visitDate = moment(startTime).format('dddd, MMM D, YYYY');
+              const visitTime = moment(startTime).format('h:mm A');
+              const locationLine = config.location ? `\n📍 Location: ${config.location}` : '';
+              await unifiedWhatsAppService.sendMessage(whatsappPhoneNumber.user_id, {
+                recipientNumber: contactDoc.phone_number,
+                messageType: 'text',
+                messageText: `✅ *Site Visit Confirmed!*\n\n📅 Date: ${visitDate}\n⏰ Time: ${visitTime}${locationLine}\n\nOur expert will be there to guide you personally. See you soon! 🏡\n\n_Reply *reschedule* or *cancel* if your plans change._`,
+                whatsappPhoneNumberId: whatsappPhoneNumber._id
+              });
             }
+
           }
           return res.sendStatus(200);
         }

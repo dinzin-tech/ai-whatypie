@@ -544,21 +544,22 @@ class AppointmentService {
 
     const rows = availableDates.slice(0, 10).map(d => ({
       id: `date_${d.date}`,
-      title: moment(d.date).format('ddd, MMM D'),
-      description: `Slots: ${d.slot_count}`
+      title: moment(d.date).format('ddd, MMM D, YYYY'),
+      description: `${d.slots_count} slot${d.slots_count !== 1 ? 's' : ''} available`
     }));
+
+    const contact = await Contact.findById(contactId);
 
     if (rows.length === 0) {
       await unifiedWhatsAppService.sendMessage(userId, {
-        recipientNumber: inputData.senderNumber,
+        recipientNumber: contact?.phone_number || inputData.senderNumber,
         messageType: 'text',
-        messageText: "Sorry, there are no available dates at the moment.",
+        messageText: `Sorry, there are no available slots right now for *${config?.name || 'this appointment'}*. Please try again later or contact us directly. 🙏`,
         whatsappPhoneNumberId
       });
       return { status: 'no_slots' };
     }
 
-    const contact = await Contact.findById(contactId);
     if (contact) {
       contact.metadata = {
         ...(contact.metadata || {}),
@@ -574,11 +575,11 @@ class AppointmentService {
       recipientNumber: contact.phone_number,
       messageType: 'interactive',
       interactiveType: 'list',
-      messageText: 'Please choose your preferred date from the available options:',
+      messageText: `📅 *Choose your preferred date for the site visit*\n\nWe have ${rows.length} date${rows.length !== 1 ? 's' : ''} available in the next ${config?.max_advance_booking_days || 30} days:`,
       listParams: {
-        header: 'Select Appointment Date',
-        buttonTitle: 'Available Dates',
-        sectionTitle: 'Upcoming Dates',
+        header: `📅 ${config?.name || 'Site Visit'}`,
+        buttonTitle: 'View Dates',
+        sectionTitle: 'Available Dates',
         items: rows
       },
       whatsappPhoneNumberId
@@ -598,10 +599,21 @@ class AppointmentService {
     const rows = slots.slice(0, 10).map(s => ({
       id: `slot_${s.start}`,
       title: moment(s.start).format('h:mm A'),
-      description: `Ends at ${moment(s.end).format('h:mm A')}`
+      description: `Ends at ${moment(s.end).format('h:mm A')} · ${config?.duration_minutes || 60} min visit`
     }));
 
     const contact = await Contact.findById(contactId);
+
+    if (rows.length === 0) {
+      await unifiedWhatsAppService.sendMessage(userId, {
+        recipientNumber: contact?.phone_number || inputData.senderNumber,
+        messageType: 'text',
+        messageText: `Sorry, all slots for *${moment(date).format('ddd, MMM D')}* are fully booked. Please go back and choose another date by typing *book visit*.`,
+        whatsappPhoneNumberId
+      });
+      return { status: 'no_time_slots' };
+    }
+
     if (contact) {
       contact.metadata = {
         ...(contact.metadata || {}),
@@ -618,11 +630,11 @@ class AppointmentService {
       recipientNumber: contact.phone_number,
       messageType: 'interactive',
       interactiveType: 'list',
-      messageText: `Please choose your preferred time for ${moment(date).format('dddd, MMM D, YYYY')}:`,
+      messageText: `⏰ *Choose your preferred time for ${moment(date).format('dddd, MMM D, YYYY')}*\n\nAll visits are ${config?.duration_minutes || 60} minutes. Our expert will be ready for you:`,
       listParams: {
-        header: 'Select Appointment Time',
-        buttonTitle: 'Available Times',
-        sectionTitle: 'Available Slots',
+        header: `⏰ ${moment(date).format('ddd, MMM D')} — Pick a Time`,
+        buttonTitle: 'View Slots',
+        sectionTitle: 'Available Times',
         items: rows
       },
       whatsappPhoneNumberId
