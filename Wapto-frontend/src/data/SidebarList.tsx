@@ -1,5 +1,5 @@
 import { MenuItem } from "@/src/types/components";
-import { BookImage, BookKey, BotMessageSquare, Cable, ChartSpline, CheckSquare, ClipboardClock, Columns, Contact, CreditCard, Database, FileImage, Form, GitBranch, HatGlasses, Image, Import, Kanban, LayoutDashboard, LayoutTemplate, ListOrdered, MailCheck, Megaphone, Menu, MessageCircle, MessageSquare, MessageSquareText, Navigation, Phone, PhoneCall, PlayCircle, Plug, Receipt, Settings, ShieldUser, SquareKanban, Tags, Timer, Users, Webhook, Workflow, Wrench, Zap } from "lucide-react";
+import { Bell, BookImage, BookKey, BotMessageSquare, Cable, ChartSpline, CheckSquare, ClipboardClock, Columns, Contact, CreditCard, Database, FileImage, Form, GitBranch, HatGlasses, Image, Import, Kanban, LayoutDashboard, LayoutTemplate, ListOrdered, MailCheck, Megaphone, Menu, MessageCircle, MessageSquare, MessageSquareText, Navigation, Phone, PhoneCall, PlayCircle, Plug, Receipt, Settings, ShieldUser, SquareKanban, Tags, Timer, Users, Webhook, Workflow, Wrench, Zap } from "lucide-react";
 import { ROUTES } from "../constants";
 
 export const MENUITEMS: MenuItem[] = [
@@ -433,6 +433,14 @@ export const NODETEMPLATES = [
     description: "Assign a CRM tag to the current contact",
     icon: <Tags />,
     color: "var(--blue-500)",
+    category: "CRM",
+  },
+  {
+    id: "notify_agent",
+    label: "Notify Agent",
+    description: "Send a WhatsApp alert to your sales agent with lead details",
+    icon: <Bell />,
+    color: "var(--orange-500)",
     category: "CRM",
   },
 ];

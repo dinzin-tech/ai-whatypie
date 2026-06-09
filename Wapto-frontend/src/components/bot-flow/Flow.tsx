@@ -335,7 +335,7 @@ const FlowCanvas = () => {
 
       const getFormattedNode = (node: any) => {
         const nodeType = node.data.nodeType;
-        const type = nodeType === "delay" ? "delay" : nodeType === "wait_for_reply" ? "wait_for_reply" : (nodeType === "api" || nodeType === "api_request") ? "api" : nodeType === "response_saver" ? "response_saver" : nodeType === "condition" ? "condition" : ["send_template", "cta_button", "assign_chatbot", "save_to_google_sheet", "create_calendar_event", "add_tag"].includes(nodeType) ? nodeType : "send_message";
+        const type = nodeType === "delay" ? "delay" : nodeType === "wait_for_reply" ? "wait_for_reply" : (nodeType === "api" || nodeType === "api_request") ? "api" : nodeType === "response_saver" ? "response_saver" : nodeType === "condition" ? "condition" : ["send_template", "cta_button", "assign_chatbot", "save_to_google_sheet", "create_calendar_event", "add_tag", "notify_agent"].includes(nodeType) ? nodeType : "send_message";
         const parameters: any = { ...node.data };
 
         if (type === "send_message" || type === "send_template" || type === "cta_button") {
@@ -383,7 +383,11 @@ const FlowCanvas = () => {
           } else {
             parameters.message_template = node.data.message || node.data.bodyText || "";
           }
+        } else if (type === "notify_agent") {
+          parameters.agent_phone = node.data.agent_phone || "";
+          parameters.message_template = node.data.message_template || "";
         } else if (type === "wait_for_reply") {
+
           parameters.variable_name = node.data.variable_name;
         } else if (type === "api") {
           parameters.url = node.data.url;

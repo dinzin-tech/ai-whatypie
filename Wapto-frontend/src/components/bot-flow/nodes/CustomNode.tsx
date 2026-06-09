@@ -18,6 +18,7 @@ import { CtaButtonNode } from "./CtaButtonNode";
 import { AssignChatbotNode } from "./AssignChatbotNode";
 import { GoogleSheetNode } from "./GoogleSheetNode";
 import { CalendarEventNode } from "./CalendarEventNode";
+import { NotifyAgentNode } from "./NotifyAgentNode";
 import { AddTagNode } from "./AddTagNode";
 
 export function CustomNode(props: any) {
@@ -59,6 +60,9 @@ export function CustomNode(props: any) {
       return <CalendarEventNode {...props} />;
     case "add_tag":
       return <AddTagNode {...props} />;
+    case "notify_agent":
+      return <NotifyAgentNode {...props} />;
+
     default:
       return <GenericNode {...props} />;
   }

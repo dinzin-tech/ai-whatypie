@@ -437,6 +437,9 @@ class AutomationEngine {
         case 'add_tag':
           result = await this.executeAddTagNode(node, inputData);
           break;
+        case 'notify_agent':
+          result = await this.executeNotifyAgentNode(node, inputData);
+          break;
         case 'cta_button':
           result = await this.executeSendCtaNode(node, inputData);
           break;
@@ -1170,6 +1173,48 @@ class AutomationEngine {
       success: true,
       output: { ...inputData, tag_added: tag_name }
     };
+  }
+
+
+  async executeNotifyAgentNode(node, inputData) {
+    const { agent_phone, message_template } = node.parameters || {};
+
+    if (!agent_phone) {
+      return { success: false, output: inputData, error: 'Agent phone number is required' };
+    }
+
+    const userId = inputData.userId || inputData.user_id;
+    if (!userId) {
+      return { success: false, output: inputData, error: 'User ID is required to notify agent' };
+    }
+
+    try {
+      const processedPhone = this.processTemplateString(agent_phone, inputData);
+      const processedMessage = this.processTemplateString(
+        message_template ||
+        '🔔 *New Real Estate Lead!*\n\n👤 Name: {{customer_name}}\n📱 Phone: {{senderNumber}}\n📍 Location: {{preferred_location}}\n\n_Captured via WhatyPie Bot_',
+        inputData
+      );
+
+      const agentNode = {
+        parameters: {
+          recipient: processedPhone,
+          message_template: processedMessage,
+          provider_type: 'business_api',
+        }
+      };
+
+      const result = await this.executeSendMessageNode(agentNode, inputData);
+      console.log(`[NOTIFY AGENT] Sent alert to ${processedPhone}: ${result.success ? 'OK' : result.error}`);
+
+      return {
+        success: true, // don't block the flow even if agent message fails
+        output: { ...inputData, agent_notified: result.success, agent_phone: processedPhone }
+      };
+    } catch (error) {
+      console.error('[NOTIFY AGENT] Error:', error.message);
+      return { success: true, output: { ...inputData, agent_notified: false } }; // non-blocking
+    }
   }
 
 
