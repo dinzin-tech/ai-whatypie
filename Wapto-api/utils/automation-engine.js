@@ -1488,7 +1488,14 @@ class AutomationEngine {
 
     const nextNode = flow.nodes.find(n => n.id === nextNodeId);
     if (!nextNode) {
-      throw new Error(`Next node ${nextNodeId} not found in flow`);
+      console.warn(`[resumeExecution] Next node ${nextNodeId} not found in flow. Flow may have been updated. Marking execution as failed and allowing fresh processing.`);
+      await AutomationExecution.findByIdAndUpdate(execution._id, {
+        status: 'failed',
+        error: `Next node ${nextNodeId} not found in flow (flow may have been updated)`,
+        contact_identifier: null,
+        completed_at: new Date()
+      });
+      return { success: false, stale: true };
     }
 
     const executionLog = execution.execution_log || [];
