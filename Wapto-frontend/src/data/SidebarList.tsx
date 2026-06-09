@@ -1,5 +1,5 @@
 import { MenuItem } from "@/src/types/components";
-import { Bell, BookImage, BookKey, BotMessageSquare, Cable, ChartSpline, CheckSquare, ClipboardClock, Columns, Contact, CreditCard, Database, FileImage, Form, GitBranch, HatGlasses, Image, Import, Kanban, LayoutDashboard, LayoutTemplate, ListOrdered, MailCheck, Megaphone, Menu, MessageCircle, MessageSquare, MessageSquareText, Navigation, Phone, PhoneCall, PlayCircle, Plug, Receipt, Settings, ShieldUser, SquareKanban, Tags, Timer, Users, Webhook, Workflow, Wrench, Zap } from "lucide-react";
+import { Bell, BookImage, BookKey, BotMessageSquare, Cable, Calendar, ChartSpline, CheckSquare, ClipboardClock, Columns, Contact, CreditCard, Database, FileImage, Form, GitBranch, HatGlasses, Image, Import, Kanban, LayoutDashboard, LayoutTemplate, ListOrdered, MailCheck, Megaphone, Menu, MessageCircle, MessageSquare, MessageSquareText, Navigation, Phone, PhoneCall, PlayCircle, Plug, Receipt, Settings, ShieldUser, SquareKanban, Tags, Timer, Users, Webhook, Workflow, Wrench, Zap } from "lucide-react";
 import { ROUTES } from "../constants";
 
 export const MENUITEMS: MenuItem[] = [
@@ -442,5 +442,13 @@ export const NODETEMPLATES = [
     icon: <Bell />,
     color: "var(--orange-500)",
     category: "CRM",
+  },
+  {
+    id: "appointment_flow",
+    label: "Booking Flow",
+    description: "Hand off conversation to the appointment booking system",
+    icon: <Calendar />,
+    color: "var(--amber-600)",
+    category: "INTEGRATIONS",
   },
 ];
