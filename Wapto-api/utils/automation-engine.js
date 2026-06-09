@@ -505,8 +505,6 @@ class AutomationEngine {
   async executeConditionNode(node, inputData) {
     const { condition, conditions, no_match_handle } = node.parameters || {};
 
-    console.log(`[COND-DEBUG] Node: ${node.id} | conditions count: ${Array.isArray(conditions) ? conditions.length : 'N/A (single)'} | incoming message: "${inputData.message}"`);
-
     if (Array.isArray(conditions) && conditions.length > 0) {
       try {
         let matchedHandle = null;
@@ -516,17 +514,15 @@ class AutomationEngine {
           const { id, field, operator, value, sourceHandle } = cond;
           const condObj = { field, operator, value };
           const result = this.evaluateCondition(condObj, inputData);
-          console.log(`[COND-DEBUG]   Rule [${id}] field="${field}" op="${operator}" values=${JSON.stringify(Array.isArray(value) ? value.slice(0, 2) : value)} → ${result}`);
           if (result) {
             matchedHandle = sourceHandle || id || null;
             matchedConditionId = id || null;
-            console.log(`[COND-DEBUG]   ✅ MATCHED → handle: ${matchedHandle}`);
             break;
           }
         }
 
         if (!matchedHandle) {
-          console.log(`[COND-DEBUG]   ❌ No rule matched. no_match_handle=${no_match_handle}`);
+          // no match, fallback handle if configured
         }
 
         const output = {
@@ -546,6 +542,7 @@ class AutomationEngine {
         return { success: false, output: {}, error: error.message };
       }
     }
+
 
     if (!condition) {
       return { success: true, output: inputData };
