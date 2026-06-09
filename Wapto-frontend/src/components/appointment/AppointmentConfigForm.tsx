@@ -343,7 +343,7 @@ const AppointmentConfigForm: React.FC = () => {
         break;
       case 1:
         const requiredTemplates = [
-          { key: "success_template_id", label: "success_template_label", required: true },
+          { key: "success_template_id", label: "success_template_label", required: false },
           { key: "confirm_template_id", label: "confirm_template_label", required: false },
           { key: "cancel_template_id", label: "cancel_template_label", required: false },
           { key: "reminder_template_id", label: "reminder_template_label", required: false },
@@ -352,14 +352,7 @@ const AppointmentConfigForm: React.FC = () => {
 
         for (const tplField of requiredTemplates) {
           const tplId = (formData as any)[tplField.key];
-          const label = t(tplField.label);
-
-          if (!tplId) {
-            if (tplField.required) {
-              newErrors[tplField.key] = `${label} is required`;
-            }
-            continue;
-          }
+          if (!tplId) continue; // all optional — skip if not set
 
           const template = templatesData?.data?.find((t: any) => t._id === tplId);
           if (template) {
@@ -370,7 +363,6 @@ const AppointmentConfigForm: React.FC = () => {
                 newErrors[`variable_mapping_${tplField.key}_${vKey}`] = `Variable {{${vKey}}} must be mapped`;
               }
             }
-
             if (isMarketingTemplate(template)) {
               if (!mapping.coupon_code) newErrors[`coupon_${tplField.key}`] = "Coupon Code is required";
             }

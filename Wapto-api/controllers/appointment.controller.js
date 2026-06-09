@@ -18,11 +18,22 @@ const OBJECT_ID_FIELDS = [
 const cleanObjectIds = (data) => {
   const cleaned = { ...data };
   OBJECT_ID_FIELDS.forEach(field => {
-    if (cleaned[field] === "") {
+    if (cleaned[field] === "" || cleaned[field] === null) {
       delete cleaned[field];
     }
   });
   return cleaned;
+};
+
+// Remove disabled slots or slots with no intervals so Mongoose doesn't fail validation
+const cleanSlots = (slots) => {
+  if (!Array.isArray(slots)) return slots;
+  return slots
+    .filter(slot => slot.is_enabled && Array.isArray(slot.intervals) && slot.intervals.length > 0)
+    .map(slot => ({
+      ...slot,
+      intervals: slot.intervals.filter(i => i.from && i.to)
+    }));
 };
 
 export const createConfig = async (req, res) => {
@@ -31,6 +42,10 @@ export const createConfig = async (req, res) => {
     const { waba_id } = cleanedBody;
     if (!waba_id) return res.status(400).json({ success: false, message: 'waba_id is required' });
 
+    if (cleanedBody.slots) {
+      cleanedBody.slots = cleanSlots(cleanedBody.slots);
+    }
+
     const config = await AppointmentConfig.create({
       ...cleanedBody,
       user_id: req.user.owner_id,
@@ -38,6 +53,7 @@ export const createConfig = async (req, res) => {
     });
     res.status(201).json({ success: true, config });
   } catch (error) {
+    console.error('[AppointmentConfig] createConfig error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -155,6 +171,9 @@ export const createBooking = async (req, res) => {
 export const updateConfig = async (req, res) => {
   try {
     const cleanedBody = cleanObjectIds(req.body);
+    if (cleanedBody.slots) {
+      cleanedBody.slots = cleanSlots(cleanedBody.slots);
+    }
     const config = await AppointmentConfig.findOneAndUpdate(
       { _id: req.params.id, user_id: req.user.owner_id },
       cleanedBody,
@@ -163,6 +182,7 @@ export const updateConfig = async (req, res) => {
     if (!config) return res.status(404).json({ success: false, message: 'Config not found' });
     res.json({ success: true, config });
   } catch (error) {
+    console.error('[AppointmentConfig] updateConfig error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
