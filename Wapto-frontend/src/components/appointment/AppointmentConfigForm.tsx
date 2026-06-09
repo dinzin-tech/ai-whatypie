@@ -343,11 +343,11 @@ const AppointmentConfigForm: React.FC = () => {
         break;
       case 1:
         const requiredTemplates = [
-          { key: "success_template_id", label: "success_template_label" },
-          { key: "confirm_template_id", label: "confirm_template_label" },
-          { key: "cancel_template_id", label: "cancel_template_label" },
-          { key: "reminder_template_id", label: "reminder_template_label" },
-          { key: "reschedule_template_id", label: "reschedule_template_label" },
+          { key: "success_template_id", label: "success_template_label", required: true },
+          { key: "confirm_template_id", label: "confirm_template_label", required: false },
+          { key: "cancel_template_id", label: "cancel_template_label", required: false },
+          { key: "reminder_template_id", label: "reminder_template_label", required: false },
+          { key: "reschedule_template_id", label: "reschedule_template_label", required: false },
         ];
 
         for (const tplField of requiredTemplates) {
@@ -355,7 +355,9 @@ const AppointmentConfigForm: React.FC = () => {
           const label = t(tplField.label);
 
           if (!tplId) {
-            newErrors[tplField.key] = `${label} is required`;
+            if (tplField.required) {
+              newErrors[tplField.key] = `${label} is required`;
+            }
             continue;
           }
 
@@ -375,6 +377,7 @@ const AppointmentConfigForm: React.FC = () => {
           }
         }
         break;
+
       case 2:
         if ((formData.appointment_fees as any) === "" || formData.appointment_fees === undefined) {
           newErrors.appointment_fees = "Required";
@@ -385,11 +388,13 @@ const AppointmentConfigForm: React.FC = () => {
         if (formData.tax_percentage === undefined || formData.tax_percentage === null || (formData.tax_percentage as any) === "") {
           newErrors.tax_percentage = "Tax percentage is required (can be 0)";
         }
-        if (!formData.payment_gateway_id) newErrors.payment_gateway_id = "Payment gateway is required";
+        if (Number(formData.appointment_fees) > 0 && !formData.payment_gateway_id) {
+          newErrors.payment_gateway_id = "Payment gateway is required when appointment fees are set";
+        }
         if (formData.accept_partial_payment && (formData.partial_payment_amount || 0) <= 0) {
           newErrors.partial_payment_amount = "Partial payment amount must be greater than 0";
         }
-        if (formData.send_payment_link_automatically) {
+        if (Number(formData.appointment_fees) > 0 && formData.send_payment_link_automatically) {
           if (!formData.payment_link_template_id) newErrors.payment_link_template_id = "Payment link template is required";
           const template = templatesData?.data?.find((t: any) => t._id === formData.payment_link_template_id);
           if (template) {
@@ -405,10 +410,12 @@ const AppointmentConfigForm: React.FC = () => {
         }
         break;
       case 3:
-        if (!formData.google_account_id) newErrors.google_account_id = "Google Account is required";
-        if (!formData.calendar_id) newErrors.calendar_id = "Calendar ID is required";
-        if (!formData.sheet_id) newErrors.sheet_id = "Spreadsheet ID is required";
+        if (formData.google_account_id) {
+          if (!formData.calendar_id) newErrors.calendar_id = "Calendar ID is required when Google Account is connected";
+          if (!formData.sheet_id) newErrors.sheet_id = "Spreadsheet ID is required when Google Account is connected";
+        }
         break;
+
       case 4:
         const enabledDays = formData.slots?.filter((s) => s.is_enabled);
         if (!enabledDays || enabledDays.length === 0) {

@@ -96,7 +96,14 @@ const FinancialsStep: React.FC<FinancialsStepProps> = ({ formData, errors, gatew
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-semibold">{t("payment_gateway")}</Label>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-semibold">{t("payment_gateway")}</Label>
+              {Number(formData.appointment_fees) === 0 && (
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">
+                  Optional — Free Visit
+                </span>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => window.open("/payment_gateway", "_blank")}
@@ -114,7 +121,7 @@ const FinancialsStep: React.FC<FinancialsStepProps> = ({ formData, errors, gatew
                     <span className="text-slate-500 text-sm">{t("loading_gateways")}</span>
                   </>
                 ) : (
-                  <SelectValue placeholder={t("select_gateway")} />
+                  <SelectValue placeholder={Number(formData.appointment_fees) === 0 ? "Not required for free visits" : t("select_gateway")} />
                 )}
               </div>
             </SelectTrigger>
@@ -128,6 +135,7 @@ const FinancialsStep: React.FC<FinancialsStepProps> = ({ formData, errors, gatew
           </Select>
           {errors.payment_gateway_id && <p className="text-[10px] text-red-500 font-medium ml-1 mt-1">{errors.payment_gateway_id}</p>}
         </div>
+
       </div>
 
       <div className="space-y-6">
