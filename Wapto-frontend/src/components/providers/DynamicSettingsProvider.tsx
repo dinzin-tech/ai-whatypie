@@ -85,7 +85,7 @@ const DynamicSettingsProvider = ({ children }: DynamicSettingsProviderProps) => 
     const faviconHref = resolveUrl(favicon_url) || DEFAULT_FAVICON;
 
     // Title update
-    const baseTitle = app_name || "Wapto";
+    const baseTitle = app_name || "WhatyPie";
     const fullTitle = pageTitle 
       ? `${pageTitle} | ${baseTitle}`
       : `${baseTitle} | All-in-One WhatsApp Marketing & Automation Platform`;

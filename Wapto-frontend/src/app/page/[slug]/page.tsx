@@ -19,12 +19,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
     if (!page) {
       return {
-        title: "Page Not Found | Wapto",
+        title: "Page Not Found | WhatyPie",
       };
     }
 
     const title = page.title;
-    const description = page.meta_description || "Wapto Dynamic Page";
+    const description = page.meta_description || "WhatyPie Dynamic Page";
     const image = resolveUrl(page.meta_image);
 
     return {
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   } catch (error) {
     console.error("Metadata generation error:", error);
     return {
-      title: "Wapto",
+      title: "WhatyPie",
     };
   }
 }

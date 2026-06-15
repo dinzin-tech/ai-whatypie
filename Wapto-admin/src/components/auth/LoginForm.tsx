@@ -246,7 +246,7 @@ const LoginForm = () => {
             Help Center
           </a>
         </div>
-        <p className="text-[13px] text-gray-400 font-semibold">© 2026 Wapto CRM. All rights reserved.</p>
+        <p className="text-[13px] text-gray-400 font-semibold">© 2026 WhatyPie CRM. All rights reserved.</p>
       </footer>
     </div>
   );

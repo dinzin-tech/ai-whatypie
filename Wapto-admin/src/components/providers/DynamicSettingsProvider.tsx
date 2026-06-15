@@ -72,7 +72,7 @@ const DynamicSettingsProvider = ({ children }: DynamicSettingsProviderProps) => 
     const faviconHref = resolveUrl(favicon_url) || SYSTEM_FAVICON_PATH;
 
     const applyAll = () => {
-      const fullTitle = `${pageTitle ? `${pageTitle} | ` : ""}${app_name || "Wapto"} | All-in-One WhatsApp Marketing & Automation Platform with CRM, Campaigns, Live Chat, Lead Generation, Business API SaaS Platform`;
+      const fullTitle = `${pageTitle ? `${pageTitle} | ` : ""}${app_name || "WhatyPie"} | All-in-One WhatsApp Marketing & Automation Platform with CRM, Campaigns, Live Chat, Lead Generation, Business API SaaS Platform`;
       if (document.title !== fullTitle) document.title = fullTitle;
       if (app_description) {
         let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;

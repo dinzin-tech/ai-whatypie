@@ -18,10 +18,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Wapto",
-    template: "%s | Wapto Admin",
+    default: "WhatyPie",
+    template: "%s | WhatyPie Admin",
   },
-  description: "Wapto Admin — WhatsApp Marketing & Automation Platform",
+  description: "WhatyPie Admin — WhatsApp Marketing & Automation Platform",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

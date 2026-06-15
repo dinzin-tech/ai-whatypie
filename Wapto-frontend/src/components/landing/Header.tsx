@@ -150,7 +150,7 @@ const Header = ({ isColor = false }: { isColor?: boolean }) => {
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <Images
             src={logo_dark_url || WaptoLogo}
-            alt={`${app_name || "Wapto"} logo`}
+            alt={`${app_name || "WhatyPie"} logo`}
             width={100}
             height={40}
             unoptimized
@@ -248,7 +248,7 @@ const Header = ({ isColor = false }: { isColor?: boolean }) => {
             <Link href="/" onClick={() => setIsMenuOpen(false)}>
               <Images
                 src={logo_dark_url || WaptoLogo}
-                alt={`${app_name || "Wapto"} logo`}
+                alt={`${app_name || "WhatyPie"} logo`}
                 width={90}
                 height={34}
                 unoptimized

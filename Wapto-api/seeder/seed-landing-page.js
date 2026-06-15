@@ -179,19 +179,19 @@ const seedLandingPage = async () => {
         subtitle: "We're Here To Assist You",
         form_enabled: true,
         phone_no: "+91 9879878789",
-        email: "support@wapto.com"
+        email: "support@whatypie.com"
       },
       footer_section: {
         cta_title: "Launch Smarter WhatsApp Campaigns Today",
         cta_description: "Launch campaigns, automate conversations, and engage customers smarter — all from one powerful WhatsApp platform.",
         cta_buttons: [{ text: "Start Free Trial", link: "/signup" }],
         social_links: [{
-          twitter: "https://twitter.com/wapto",
-          linkedin: "https://linkedin.com/company/wapto",
-          facebook: "https://facebook.com/wapto",
-          instagram: "https://instagram.com/wapto"
+          twitter: "https://twitter.com/whatypie",
+          linkedin: "https://linkedin.com/company/whatypie",
+          facebook: "https://facebook.com/whatypie",
+          instagram: "https://instagram.com/whatypie"
         }],
-        copy_rights_text: "© 2026 WAPTO. All rights reserved."
+        copy_rights_text: "© 2026 WHATYPIE. All rights reserved."
       }
     });
 

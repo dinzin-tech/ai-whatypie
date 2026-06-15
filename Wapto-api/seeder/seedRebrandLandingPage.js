@@ -22,13 +22,13 @@ const LANDING_ASSET_FILES = {
 };
 
 const WAPTO_FOOTER = {
-  copy_rights_text: '© 2026 Wapto. All rights reserved.',
+  copy_rights_text: '© 2026 WhatyPie. All rights reserved.',
   social_links: [
     {
-      twitter: 'https://twitter.com/wapto',
-      linkedin: 'https://linkedin.com/company/wapto',
-      facebook: 'https://facebook.com/wapto',
-      instagram: 'https://instagram.com/wapto',
+      twitter: 'https://twitter.com/whatypie',
+      linkedin: 'https://linkedin.com/company/whatypie',
+      facebook: 'https://facebook.com/whatypie',
+      instagram: 'https://instagram.com/whatypie',
     },
   ],
 };
@@ -91,7 +91,7 @@ export default async function seedRebrandLandingPage() {
     }
 
     if (isLegacyPreWaptoLandingValue(landing.contact_section?.email)) {
-      $set['contact_section.email'] = 'support@wapto.com';
+      $set['contact_section.email'] = 'support@whatypie.com';
     }
 
     const copyRights = landing.footer_section?.copy_rights_text || '';

@@ -2,7 +2,7 @@ import PaymentGatewayList from "@/src/components/paymentGateway/PaymentGatewayLi
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Payment Gateway | Wapto",
+  title: "Payment Gateway | WhatyPie",
 };
 
 export default function PaymentGatewayPage() {

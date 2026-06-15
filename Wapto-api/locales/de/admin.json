@@ -1,5 +1,5 @@
 {
-  "common_app_name": "Wapto",
+  "common_app_name": "WhatyPie",
   "common_app_description": "WhatsApp Business-Lösung",
   "common_title": "Titel",
   "common_description": "Beschreibung",
@@ -79,8 +79,8 @@
   "common_no_keep_it": "Nein, behalten",
   "auth_login": "Anmelden",
   "auth_logout": "Abmelden",
-  "auth_welcome": "Willkommen bei Wapto",
-  "auth_welcome_message": "Willkommen im Wapto Admin-Portal",
+  "auth_welcome": "Willkommen bei WhatyPie",
+  "auth_welcome_message": "Willkommen im WhatyPie Admin-Portal",
   "auth_admin_portal": "Admin-Portal",
   "auth_enter_credentials": "Geben Sie Ihre Anmeldedaten ein, um auf das Dashboard zuzugreifen",
   "auth_email": "E-Mail",

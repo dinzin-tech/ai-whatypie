@@ -37,8 +37,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Wapto",
-    template: "%s | Wapto",
+    default: "WhatyPie",
+    template: "%s | WhatyPie",
   },
   description: "All-in-One WhatsApp Marketing & Automation Platform with CRM, Campaigns, Live Chat, Lead Generation, Business API SaaS Platform",
 };

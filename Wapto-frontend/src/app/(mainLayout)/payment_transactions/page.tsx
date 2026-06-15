@@ -2,7 +2,7 @@ import PaymentTransactionList from "@/src/components/paymentGateway/PaymentTrans
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Payment Transactions | Wapto",
+  title: "Payment Transactions | WhatyPie",
 };
 
 export default function PaymentTransactionsPage() {

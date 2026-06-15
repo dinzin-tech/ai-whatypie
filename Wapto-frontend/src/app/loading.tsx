@@ -12,11 +12,11 @@ const Loading = () => {
         <motion.div className="flex flex-col items-center gap-8">
           <div className="flex flex-col items-center gap-1">
             <motion.h1 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
-              {app_name || "Wapto"}
+              {app_name || "WhatyPie"}
               <span className="text-primary italic">.</span>
             </motion.h1>
             <motion.p className="text-[10px] uppercase tracking-[0.4em] font-bold text-slate-400 dark:text-slate-500 pl-1">
-              One and only {app_name || "Wapto"}
+              One and only {app_name || "WhatyPie"}
             </motion.p>
           </div>
 

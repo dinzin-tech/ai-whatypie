@@ -1,6 +1,6 @@
 {
-    "name": "Wapto",
-    "short_name": "Wapto",
+    "name": "WhatyPie",
+    "short_name": "WhatyPie",
     "start_url": "/auth/login",
     "display": "standalone",
     "theme_color": "#059669",

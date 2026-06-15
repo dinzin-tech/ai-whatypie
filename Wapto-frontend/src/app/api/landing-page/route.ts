@@ -7,7 +7,7 @@ const LANDING_FALLBACK = {
   success: true,
   data: {
     hero_section: {
-      badge: "Wapto",
+      badge: "WhatyPie",
       title: "WhatsApp Marketing Platform",
       description: "Connect with customers on WhatsApp.",
       primary_button: { text: "Get Started", link: "/auth/register" },

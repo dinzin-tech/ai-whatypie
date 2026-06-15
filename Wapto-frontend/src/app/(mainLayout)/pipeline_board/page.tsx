@@ -2,7 +2,7 @@ import PipelineBoard from "@/src/components/kanban-funnel/PipelineBoard";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Pipeline Board | WAPTO",
+  title: "Pipeline Board | WHATYPIE",
   description: "Manage your Kanban funnels and automated pipelines.",
 };
 

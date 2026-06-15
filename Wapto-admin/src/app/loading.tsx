@@ -23,7 +23,7 @@ const Loading = () => {
               transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
               className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white"
             >
-              {data?.app_name || "Wapto"}
+              {data?.app_name || "WhatyPie"}
               <span className="text-primary italic">.</span>
             </motion.h1>
             <motion.p
@@ -32,7 +32,7 @@ const Loading = () => {
               transition={{ delay: 0.5, duration: 1 }}
               className="text-[10px] uppercase tracking-[0.4em] font-bold text-slate-400 dark:text-slate-500 pl-1"
             >
-              One and only {data?.app_name || "Wapto"}
+              One and only {data?.app_name || "WhatyPie"}
             </motion.p>
           </div>
 

@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const settingSchema = new mongoose.Schema({
   app_name: {
     type: String,
-    default: 'Wapto'
+    default: 'WhatyPie'
   },
   app_description: {
     type: String,
@@ -115,7 +115,7 @@ const settingSchema = new mongoose.Schema({
   },
   mail_from_name: {
     type: String,
-    default: 'Wapto'
+    default: 'WhatyPie'
   },
   mail_from_email: {
     type: String,

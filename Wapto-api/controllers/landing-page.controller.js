@@ -14,12 +14,12 @@ const WAPTO_LANDING_IMAGES = {
 };
 
 const WAPTO_FOOTER_DEFAULTS = {
-  copy_rights_text: '© 2026 Wapto. All rights reserved.',
+  copy_rights_text: '© 2026 WhatyPie. All rights reserved.',
   social_links: [{
-    twitter: 'https://twitter.com/wapto',
-    linkedin: 'https://linkedin.com/company/wapto',
-    facebook: 'https://facebook.com/wapto',
-    instagram: 'https://instagram.com/wapto',
+    twitter: 'https://twitter.com/whatypie',
+    linkedin: 'https://linkedin.com/company/whatypie',
+    facebook: 'https://facebook.com/whatypie',
+    instagram: 'https://instagram.com/whatypie',
   }],
 };
 
@@ -212,7 +212,7 @@ const getLandingPage = async (req, res) => {
           subtitle: "We're Here To Assist You",
           form_enabled: true,
           phone_no: "+91 9879878789",
-          email: "support@wapto.com"
+          email: "support@whatypie.com"
         },
         footer_section: {
           cta_title: "Launch Smarter WhatsApp Campaigns Today",
