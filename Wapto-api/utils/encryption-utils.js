@@ -2,7 +2,10 @@ import crypto from 'crypto';
 
 const ALGORITHM = 'aes-256-cbc';
 const IV_LENGTH = 16;
-const KEY = process.env.ENCRYPTION_KEY || 'v8y/A?D(G+KbPeShVmYq3t6w9z$C&E)H'; 
+const KEY = process.env.ENCRYPTION_KEY;
+if (!KEY || KEY.length !== 32) {
+  throw new Error('ENCRYPTION_KEY environment variable is not defined or is not exactly 32 characters/bytes long (required for aes-256-cbc).');
+} 
 
 
 export const encrypt = (text) => {

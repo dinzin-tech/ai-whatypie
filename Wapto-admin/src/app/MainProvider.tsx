@@ -66,6 +66,15 @@ function AppContent({ children }: MainProviderProps) {
 
   useEffect(() => {
     const isAuthPage = pathname?.startsWith("/auth");
+    if (!isAuthenticated && !isAuthPage) {
+      router.push("/auth/login");
+    } else if (isAuthenticated && isAuthPage) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, pathname, router]);
+
+  useEffect(() => {
+    const isAuthPage = pathname?.startsWith("/auth");
 
     if (isAuthPage) {
       document.documentElement.dir = "ltr";

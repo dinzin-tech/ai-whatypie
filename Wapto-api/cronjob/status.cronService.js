@@ -15,27 +15,31 @@ async function statusCronService() {
                     auto_renew: false,
                     deleted_at: null
                 },
-                {
-                    $set: {
-                        status: 'cancelled',
-                        expires_at: "$current_period_end"
+                [
+                    {
+                        $set: {
+                            status: 'cancelled',
+                            expires_at: "$current_period_end"
+                        }
                     }
-                }
+                ]
             );
 
             const expiredResult = await Subscription.updateMany(
                 {
                     status: { $in: ['active', 'trial'] },
                     current_period_end: { $lte: today },
-                    auto_rereturnDocument: 'after',
+                    auto_renew: true,
                     deleted_at: null
                 },
-                {
-                    $set: {
-                        status: 'expired',
-                        expires_at: "$current_period_end"
+                [
+                    {
+                        $set: {
+                            status: 'expired',
+                            expires_at: "$current_period_end"
+                        }
                     }
-                }
+                ]
             );
 
             console.log(`Successfully processed: ${cancelledResult.modifiedCount} cancelled, ${expiredResult.modifiedCount} expired subscription(s).`);

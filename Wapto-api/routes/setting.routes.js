@@ -27,10 +27,9 @@ const logoFields = [
 ];
 
 
-router.get("/", getAllSettings);
-
-
 router.use(authenticate);
+
+router.get("/", getAllSettings);
 
 
 router.put(

@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 import { generateToken } from '../utils/jwt.js';
 import { User, Session, Setting, OTPLog, Subscription, Plan, Role, RolePermission, Permission, TeamPermission, WhatsappWaba, WhatsappConnection } from '../models/index.js';
 import { sendMail } from '../utils/mail.js';
@@ -28,7 +29,7 @@ const REGEX = {
 const generateOTP = () => {
   const min = Math.pow(10, OTP_LENGTH - 1);
   const max = Math.pow(10, OTP_LENGTH) - 1;
-  return "123456";
+  return String(crypto.randomInt(min, max + 1));
 };
 
 
@@ -944,6 +945,7 @@ export const getPublicRoles = async (req, res) => {
 
 export const deleteAccount = async (req, res) => {
   try {
+    const now = new Date();
     const userId = req.user.id;
     const user = await User.findById(userId);
 
