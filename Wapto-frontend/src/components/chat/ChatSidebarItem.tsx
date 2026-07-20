@@ -82,7 +82,7 @@ const ChatSidebarItem: React.FC<ChatSidebarItemProps> = ({ chat, isSelected, isS
             <div className="flex items-center gap-2 truncate">
               <h3 className={cn("font-semibold truncate text-sm", selectedChatId === contact.id ? "" : "text-slate-900 dark:text-white")} style={selectedChatId === contact.id ? { color: finalColor } : {}}>
                 {isAgent && user?.is_phoneno_hide ? "Customer" : maskSensitiveData(contact.number, "phone", is_demo_mode)}
-              </h3>
+              </h3> - {contact.name && <span className="text-[11px] text-slate-500 dark:text-gray-400 truncate">{contact.name}</span>}
               {contact.chat_status === "resolved" && <Badge className="h-4 px-1.5 text-[8px] bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 font-bold uppercase tracking-tighter">Resolved</Badge>}
             </div>
             <div className="flex items-center gap-1">
