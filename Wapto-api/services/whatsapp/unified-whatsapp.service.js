@@ -301,6 +301,21 @@ class UnifiedWhatsAppService {
                     }]
                   });
                 }
+              } else if (String(btn.type).toLowerCase() === 'flow') {
+                const flowToken = messageParams.flowToken || `flow_${Date.now()}`;
+                const flowActionData = messageParams.flowActionData || {};
+                templateComponents.push({
+                  type: 'button',
+                  sub_type: 'flow',
+                  index: btnIndex.toString(),
+                  parameters: [{
+                    type: 'action',
+                    action: {
+                      flow_token: String(flowToken),
+                      ...(Object.keys(flowActionData).length > 0 ? { flow_action_data: flowActionData } : {})
+                    }
+                  }]
+                });
               }
             });
           }

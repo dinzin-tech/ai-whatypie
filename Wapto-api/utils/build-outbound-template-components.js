@@ -186,6 +186,21 @@ export const buildOutboundTemplateComponents = (template, templateVariables = {}
             parameters: [{ type: 'text', text: String(urlValue) }]
           });
         }
+      } else if (String(btn.type).toLowerCase() === 'flow') {
+        const flowToken = templateData.flow_token || `flow_${Date.now()}`;
+        const flowActionData = templateData.flow_action_data || {};
+        templateComponents.push({
+          type: 'button',
+          sub_type: 'flow',
+          index: btnIndex.toString(),
+          parameters: [{
+            type: 'action',
+            action: {
+              flow_token: String(flowToken),
+              ...(Object.keys(flowActionData).length > 0 ? { flow_action_data: flowActionData } : {})
+            }
+          }]
+        });
       }
     });
   }
