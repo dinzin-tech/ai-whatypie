@@ -1,0 +1,5 @@
+
+> WhatyPie-frontend@0.1.0 build
+> next build --webpack --no-lint --worker-threads=false
+
+error: unknown option '--no-lint'

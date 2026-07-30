@@ -135,9 +135,9 @@ cd /var/www/whatypie
 
 # Clone or move your files here
 # Structure should look like:
-# /var/www/whatypie/Wapto-api
-# /var/www/whatypie/Wapto-frontend
-# /var/www/whatypie/Wapto-admin
+# /var/www/whatypie/WhatyPie-api
+# /var/www/whatypie/WhatyPie-frontend
+# /var/www/whatypie/WhatyPie-admin
 ```
 
 ---
@@ -146,7 +146,7 @@ cd /var/www/whatypie
 
 1.  Navigate to the API folder and install dependencies:
     ```bash
-    cd /var/www/whatypie/Wapto-api
+    cd /var/www/whatypie/WhatyPie-api
     npm install --production
     ```
 2.  Configure Environment variables:
@@ -172,7 +172,7 @@ cd /var/www/whatypie
 ### 1. Tenant Frontend (`WhatyPie-frontend`)
 1.  Navigate to the folder:
     ```bash
-    cd /var/www/whatypie/Wapto-frontend
+    cd /var/www/whatypie/WhatyPie-frontend
     ```
 2.  Configure Environment variables:
     ```bash
@@ -190,7 +190,7 @@ cd /var/www/whatypie
 ### 2. Super Admin Panel (`WhatyPie-admin`)
 1.  Navigate to the folder:
     ```bash
-    cd /var/www/whatypie/Wapto-admin
+    cd /var/www/whatypie/WhatyPie-admin
     ```
 2.  Configure Environment variables:
     ```bash

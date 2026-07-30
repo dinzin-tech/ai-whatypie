@@ -1,0 +1,151 @@
+
+> WhatyPie@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Environments: .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 26.2min
+  Running TypeScript ...
+  Collecting page data using 1 worker ...
+  Generating static pages using 1 worker (0/86) ...
+  Generating static pages using 1 worker (21/86) 
+  Generating static pages using 1 worker (42/86) 
+  Generating static pages using 1 worker (64/86) 
+✓ Generating static pages using 1 worker (86/86) in 7.9s
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /ai_intelligence
+├ ○ /ai_intelligence/create
+├ ƒ /ai_intelligence/edit/[modelName]
+├ ƒ /api/admin/template
+├ ƒ /api/admin/template/[id]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/forgot-password
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/my-permissions
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/reset-password
+├ ƒ /api/auth/roles
+├ ƒ /api/auth/verify-otp
+├ ƒ /api/currencies
+├ ƒ /api/currencies/[id]
+├ ƒ /api/currencies/[id]/toggle-default
+├ ƒ /api/currencies/[id]/toggle-status
+├ ƒ /api/dashboard
+├ ƒ /api/faq
+├ ƒ /api/faq/[id]
+├ ƒ /api/impersonation/start
+├ ƒ /api/inquiry
+├ ƒ /api/is-demo-mode
+├ ƒ /api/landing_page
+├ ƒ /api/landing_page/upload_image
+├ ƒ /api/languages
+├ ƒ /api/languages/[id]
+├ ƒ /api/languages/[id]/toggle-status
+├ ƒ /api/languages/translations/[locale]
+├ ƒ /api/manage_user
+├ ƒ /api/manage_user/[id]
+├ ƒ /api/manage_user/[id]/send-reset-password-link
+├ ƒ /api/models
+├ ƒ /api/models/[id]
+├ ƒ /api/models/[id]/status
+├ ƒ /api/models/delete
+├ ƒ /api/models/test
+├ ƒ /api/pages
+├ ƒ /api/pages/[id]
+├ ƒ /api/pages/[id]/toggle-status
+├ ƒ /api/pages/delete
+├ ƒ /api/payment_gateway/paypal
+├ ƒ /api/payment_gateway/razorpay
+├ ƒ /api/payment_gateway/stripe
+├ ƒ /api/plan
+├ ƒ /api/plan/[id]
+├ ƒ /api/plan/statistics
+├ ƒ /api/quick-replies
+├ ƒ /api/quick-replies/[id]
+├ ƒ /api/quick-replies/[id]/favorite
+├ ƒ /api/quick-replies/admin
+├ ƒ /api/quick-replies/delete
+├ ƒ /api/roles
+├ ƒ /api/roles/[id]
+├ ƒ /api/roles/[id]/toggle-status
+├ ƒ /api/roles/permissions
+├ ƒ /api/setting
+├ ƒ /api/setting/mail/test
+├ ƒ /api/short_link
+├ ƒ /api/subscription
+├ ƒ /api/subscription/[id]/approve-manual
+├ ƒ /api/subscription/[id]/cancel
+├ ƒ /api/subscription/[id]/override-limits
+├ ƒ /api/subscription/[id]/reject-manual
+├ ƒ /api/subscription/[id]/reset-limits
+├ ƒ /api/subscription/assign
+├ ƒ /api/subscription/payment/[id]/invoice
+├ ƒ /api/subscription/payments
+├ ƒ /api/subscription/stats
+├ ƒ /api/taxes
+├ ƒ /api/taxes/[id]
+├ ƒ /api/taxes/bulk-delete
+├ ƒ /api/testimonial
+├ ƒ /api/testimonial/[id]
+├ ƒ /api/testimonial/[id]/status
+├ ƒ /api/uploads/[...path]
+├ ○ /auth/forgot-password
+├ ○ /auth/login
+├ ○ /auth/reset-password
+├ ○ /auth/restore-session
+├ ○ /auth/verify-otp
+├ ○ /currency_options
+├ ○ /currency_options/add
+├ ƒ /currency_options/edit/[id]
+├ ○ /customer_inquiries
+├ ○ /customer_plans
+├ ○ /dashboard
+├ ○ /faq_management
+├ ○ /faq_management/add
+├ ƒ /faq_management/edit/[id]
+├ ○ /gateway_setup
+├ ○ /landing_page_setup
+├ ○ /language_library
+├ ○ /language_library/add
+├ ƒ /language_library/edit/[id]
+├ ƒ /language_library/translations/[id]
+├ ○ /manage_profile
+├ ○ /page_management
+├ ○ /page_management/add
+├ ƒ /page_management/edit/[id]
+├ ○ /payment_history
+├ ○ /permissions_control
+├ ○ /permissions_control/add
+├ ƒ /permissions_control/edit/[id]
+├ ○ /plan_management
+├ ○ /plan_management/add
+├ ƒ /plan_management/edit/[id]
+├ ○ /quick_reply
+├ ○ /short_links_users
+├ ○ /staff_and_members
+├ ○ /staff_and_members/add
+├ ○ /system_preferences
+├ ○ /tax_configuration
+├ ○ /tax_configuration/create
+├ ƒ /tax_configuration/edit/[id]
+├ ○ /template_management
+├ ƒ /template_management/[id]/edit
+├ ○ /template_management/create
+├ ○ /testimonial_management
+├ ○ /testimonial_management/add
+└ ƒ /testimonial_management/edit/[id]
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

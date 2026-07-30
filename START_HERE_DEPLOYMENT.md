@@ -1,28 +1,28 @@
-# Wapto codebase — start here (deployment)
+# WhatyPie codebase — start here (deployment)
 
-This folder is a **lightweight copy** of the Wapto product source (API, frontend, admin, and documentation). It was prepared for packaging, review, or handoff **without** `node_modules`, build caches, or other heavy artifacts.
+This folder is a **lightweight copy** of the WhatyPie product source (API, frontend, admin, and documentation). It was prepared for packaging, review, or handoff **without** `node_modules`, build caches, or other heavy artifacts.
 
-**Rule for this package:** make code and config changes **only inside `wapto-codebase-zip/`**, not in the parent repo folders, unless you intentionally sync back later.
+**Rule for this package:** make code and config changes **only inside `WhatyPie-codebase-zip/`**, not in the parent repo folders, unless you intentionally sync back later.
 
-**Brand logo:** the canonical asset is **`wapto-logo.png`** at the zip root. Copies live under `Wapto-api/branding/`, `Wapto-frontend/public/assets/logos/`, `Wapto-admin/public/assets/logos/`, and `wapto-documentation/assets/images/`. Seeders copy it into API `uploads/` on first run. Do not ship legacy `logo1.png` / WAPI wordmark files.
+**Brand logo:** the canonical asset is **`WhatyPie-logo.png`** at the zip root. Copies live under `WhatyPie-api/branding/`, `WhatyPie-frontend/public/assets/logos/`, `WhatyPie-admin/public/assets/logos/`, and `WhatyPie-documentation/assets/images/`. Seeders copy it into API `uploads/` on first run. Do not ship legacy `logo1.png` / WAPI wordmark files.
 
 ---
 
 ## Step 1 — Open the documentation first (required)
 
-Deployment and installation are explained in **`wapto-documentation/`**. Read that **before** editing code or running servers.
+Deployment and installation are explained in **`WhatyPie-documentation/`**. Read that **before** editing code or running servers.
 
 ### How to open the docs
 
 1. Go to the documentation folder:
    ```
-   wapto-codebase-zip/wapto-documentation/
+   WhatyPie-codebase-zip/WhatyPie-documentation/
    ```
 2. Open **`index.html`** in a web browser (double-click, or drag the file into Chrome/Firefox/Safari/Edge).
 3. Use the **left sidebar** on every page — it is the table of contents for the whole guide.
 4. Use the **search box** at the top of the home page to find topics (e.g. “Docker”, “VPS”, “env”, “seed”).
 
-> **Tip:** If styles look broken, open `index.html` via the file path directly (not from a random subfolder). Assets live under `wapto-documentation/assets/`.
+> **Tip:** If styles look broken, open `index.html` via the file path directly (not from a random subfolder). Assets live under `WhatyPie-documentation/assets/`.
 
 ### After go-live
 
@@ -32,7 +32,7 @@ When deployed, the same HTML is usually served at your **docs domain** (e.g. `ht
 
 ## Step 2 — Recommended reading order (deployment)
 
-Follow the sidebar section **“Wapto Installation”** in this order:
+Follow the sidebar section **“WhatyPie Installation”** in this order:
 
 | Order | Page | File | What you learn |
 |------:|------|------|----------------|
@@ -49,17 +49,17 @@ Follow the sidebar section **“Wapto Installation”** in this order:
 | 7 | Update | `update.html` | Upgrading an existing installation |
 | 8 | Database Seeding | `database-seeding.html` | Default admin, roles, pages (`npm run seed`) — **replaces old `/install` wizard** |
 
-Expand sidebar menus with the **chevron (▼)** next to “Wapto Installation”, “Backend Installation”, and “Frontend Installation”.
+Expand sidebar menus with the **chevron (▼)** next to “WhatyPie Installation”, “Backend Installation”, and “Frontend Installation”.
 
 ### Removed or moved (do not use old docs)
 
 | Old item | What to use instead |
 |----------|---------------------|
-| Browser install wizard (`/install`, `install.html`) | `npm run seed` in `Wapto-api`, then admin login — see `database-seeding.html` |
+| Browser install wizard (`/install`, `install.html`) | `npm run seed` in `WhatyPie-api`, then admin login — see `database-seeding.html` |
 | `dev-installation.html` | `quick-installation.html` or `overview.html` |
 | `live-server.html` | Redirects to `virtual-server.html` |
 | `frontend-installation.html` | Redirects to `frontend-local.html` |
-| CodeCanyon / Envato license steps | Not required for Wapto v2 whitelabel deploys |
+| CodeCanyon / Envato license steps | Not required for WhatyPie v2 whitelabel deploys |
 
 ### Production VPS (most common)
 
@@ -83,10 +83,10 @@ For a single server running everything (API + chat app + admin + docs):
 
 | Folder | Role | Typical URL (example) |
 |--------|------|------------------------|
-| `Wapto-api/` | Node.js API — auth, WhatsApp, billing, webhooks, settings | `https://apiv2.yourdomain.com` |
-| `Wapto-frontend/` | Next.js tenant app (inbox, WABA, campaigns) | `https://chatv2.yourdomain.com` |
-| `Wapto-admin/` | Next.js admin (CMS, plans, system preferences) | `https://adminv2.yourdomain.com` |
-| `wapto-documentation/` | Static HTML operator/user documentation | `https://docsv2.yourdomain.com` |
+| `WhatyPie-api/` | Node.js API — auth, WhatsApp, billing, webhooks, settings | `https://apiv2.yourdomain.com` |
+| `WhatyPie-frontend/` | Next.js tenant app (inbox, WABA, campaigns) | `https://chatv2.yourdomain.com` |
+| `WhatyPie-admin/` | Next.js admin (CMS, plans, system preferences) | `https://adminv2.yourdomain.com` |
+| `WhatyPie-documentation/` | Static HTML operator/user documentation | `https://docsv2.yourdomain.com` |
 
 Each app has a **`Dockerfile`** and **`.env.example`** (and may ship a local `.env` for reference). The documentation pages describe which variables must match across API, frontend, and admin (API URL, storage URL, socket URL, domains).
 
@@ -98,24 +98,24 @@ This copy **excludes** `node_modules`, `.next`, and caches. After reading the do
 
 ```bash
 # API
-cd Wapto-api && npm install
+cd WhatyPie-api && npm install
 
 # Frontend (tenant app)
-cd ../Wapto-frontend && npm install
+cd ../WhatyPie-frontend && npm install
 
 # Admin
-cd ../Wapto-admin && npm install
+cd ../WhatyPie-admin && npm install
 ```
 
 Use the commands and ports from the documentation pages you followed (local vs VPS vs Docker).
 
-**Database seeding** (default admin, roles, pages) is described in the installation docs; the API also supports `npm run seed` in `Wapto-api/` when you are ready.
+**Database seeding** (default admin, roles, pages) is described in the installation docs; the API also supports `npm run seed` in `WhatyPie-api/` when you are ready.
 
 ---
 
 ## Step 5 — Sidebar map (beyond installation)
 
-After deployment, use the same `wapto-documentation/` site for day-to-day operation:
+After deployment, use the same `WhatyPie-documentation/` site for day-to-day operation:
 
 | Sidebar section | Purpose |
 |-----------------|--------|
@@ -125,7 +125,7 @@ After deployment, use the same `wapto-documentation/` site for day-to-day operat
 | **Admin Guide** | CMS, plans, users, settings, gateways |
 | **Tenant / Agent guides** | Inbox, WABA, campaigns, automations, etc. |
 
-Use search or browse the left nav — every `.html` file in `wapto-documentation/` is one article.
+Use search or browse the left nav — every `.html` file in `WhatyPie-documentation/` is one article.
 
 ---
 
@@ -145,7 +145,7 @@ Details and troubleshooting are in **Update** and the VPS installation pages.
 ## Quick reference — installation HTML files
 
 ```
-wapto-documentation/
+WhatyPie-documentation/
 ├── index.html                 ← START: open in browser
 ├── prerequisite.html
 ├── overview.html
@@ -166,9 +166,9 @@ Legacy URLs (redirect only): `live-server.html`, `frontend-installation.html`
 
 ## Support
 
-- Documentation: `wapto-documentation/` (this package)
-- Email (as linked in docs): hello@wapto.com
+- Documentation: `WhatyPie-documentation/` (this package)
+- Email (as linked in docs): hello@WhatyPie.com
 
 ---
 
-*Read `wapto-documentation/index.html` first, then follow the “Wapto Installation” section in the sidebar before changing code or deploying.*
+*Read `WhatyPie-documentation/index.html` first, then follow the “WhatyPie Installation” section in the sidebar before changing code or deploying.*
