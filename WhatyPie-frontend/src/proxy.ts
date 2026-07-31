@@ -8,10 +8,6 @@ export default withAuth(
     const { pathname } = req.nextUrl;
     const isAuthenticated = Boolean(req.nextauth.token);
     
-    if (pathname === "/") {
-      const destination = isAuthenticated ? ROUTES.Dashboard : ROUTES.Login;
-      return NextResponse.redirect(new URL(destination, req.url));
-    }
     if (pathname.startsWith("/auth") && pathname !== "/auth/impersonate" && isAuthenticated) {
       return NextResponse.redirect(new URL(ROUTES.Dashboard, req.url));
     }
@@ -22,7 +18,12 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
-        const isGuestAllowed = pathname.startsWith(ROUTES.Login) || pathname.startsWith("/auth");
+        const isGuestAllowed =
+          pathname === "/" ||
+          pathname === "/landing" ||
+          pathname === "/index.html" ||
+          pathname.startsWith(ROUTES.Login) ||
+          pathname.startsWith("/auth");
         return Boolean(token) || isGuestAllowed;
       },
     },

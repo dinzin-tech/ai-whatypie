@@ -1,61 +1,73 @@
 "use client";
 
-import Connect from "./Connect";
-import Faq from "./Faq";
-import Features from "./Features";
-import Footer from "./Footer";
-import Header from "./Header";
-import Home from "./Home";
-import Platform from "./Platform";
-import PricingPlan from "./PricingPlan";
-import TapTop from "./TapTop";
-import Testimonial from "./Testimonial";
-import { useGetLandingPageQuery } from "../../redux/api/landingPageApi";
-import { useEffect } from "react";
-import { useTheme } from "next-themes";
-import Loading from "@/src/app/loading";
+import React from "react";
+import { Header } from "./Header";
+import { Hero } from "./Hero";
+import { TrustSection } from "./TrustSection";
+import { ServicesSection } from "./ServicesSection";
+import { TransformationSection } from "./TransformationSection";
+import { SolutionsSection } from "./SolutionsSection";
+import { IndustriesSection } from "./IndustriesSection";
+import { ProcessSection } from "./ProcessSection";
+import { WhyChooseUs } from "./WhyChooseUs";
+import { PlatformSection } from "./PlatformSection";
+import { AiShowcase } from "./AiShowcase";
+import { CaseStudies } from "./CaseStudies";
+import { Testimonial } from "./Testimonial";
+import { Faq } from "./Faq";
+import { FinalCta } from "./FinalCta";
+import { Footer } from "./Footer";
 
-const Landing = () => {
-  const { data: landingData, isLoading, error } = useGetLandingPageQuery();
-  const { theme, setTheme } = useTheme();
-
-  useEffect(() => {
-    const previousTheme = theme;
-    setTheme("light");
-    return () => {
-      if (previousTheme) {
-        setTheme(previousTheme);
-      }
-    };
-  }, [setTheme, theme]);
-
-  if (isLoading) {
-    return <Loading />;
-  }
-
-  if (error || !landingData?.data) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-landing-card-dark text-white">
-        <h2 className="text-2xl font-bold mb-4">Oops! Something went wrong.</h2>
-        <p className="text-gray-400">Failed to load the landing page. Please try again later.</p>
-      </div>
-    );
-  }
-
-  const data = landingData.data;
-
+const Landing: React.FC = () => {
   return (
-    <div>
+    <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-emerald-500 selection:text-slate-950">
+      {/* Navigation Header */}
       <Header />
-      <Home data={data.hero_section} />
-      <Features data={data.features_section} />
-      <Platform data={data.platform_section} />
-      <PricingPlan data={data.pricing_section} />
-      <Testimonial data={data.testimonials_section} />
-      <Faq data={data.faq_section} />
-      <Connect data={data.contact_section} />
-      <Footer data={data.footer_section} />
-      <TapTop />
+
+      {/* Hero Section */}
+      <Hero />
+
+      {/* Trust & Industries Counter */}
+      <TrustSection />
+
+      {/* Services Section ("What We Do") */}
+      <ServicesSection />
+
+      {/* Transformation Comparison ("Before & After") */}
+      <TransformationSection />
+
+      {/* AI Solutions Matrix */}
+      <SolutionsSection />
+
+      {/* Industry Blueprints */}
+      <IndustriesSection />
+
+      {/* 7-Step Delivery Process */}
+      <ProcessSection />
+
+      {/* Operating Philosophy ("Why Choose Us") */}
+      <WhyChooseUs />
+
+      {/* Software Platform Capabilities */}
+      <PlatformSection />
+
+      {/* Interactive AI Simulation */}
+      <AiShowcase />
+
+      {/* Case Studies */}
+      <CaseStudies />
+
+      {/* Executive Testimonials */}
+      <Testimonial />
+
+      {/* FAQ Accordion */}
+      <Faq />
+
+      {/* Final High-Converting CTA */}
+      <FinalCta />
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

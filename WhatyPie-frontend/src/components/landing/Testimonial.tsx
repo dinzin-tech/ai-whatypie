@@ -1,101 +1,93 @@
 "use client";
 
-import { Quote, Star } from "lucide-react";
 import React, { useState } from "react";
-import { Autoplay } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
-import Images from "../../shared/Image";
-import { TestimonialPopulated, TestimonialProps } from "../../types/landingPage";
+import { Star, Quote, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
 
-const Testimonial: React.FC<TestimonialProps> = ({ data }) => {
-  const testimonials = (data.testimonials || []).map((item) => item._id).filter((item): item is TestimonialPopulated => !!item && typeof item === "object");
-
-  const testimonialsFinal = testimonials.length === 4 ? [...testimonials, ...testimonials] : testimonials;
-
+export const Testimonial: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  if (testimonialsFinal.length === 0) return null;
+  const testimonials = [
+    {
+      quote: "WhatyPie isn't just another WhatsApp tool or CRM. They came into our company, audited our broken sales funnel, and built an end-to-end AI system that handles 80% of our lead inquiries autonomously.",
+      author: "Vikram Malhotra",
+      title: "Chief Operating Officer",
+      company: "Skyline Infra Developers",
+      metrics: "Saved 120+ monthly staff hours",
+    },
+    {
+      quote: "The speed of execution was incredible. Within 10 days, our medical clinic went from constant phone chaos to a smooth 24/7 AI booking assistant on WhatsApp. Our patient satisfaction scores hit 4.9/5.",
+      author: "Dr. Ananya Sharma",
+      title: "Managing Director",
+      company: "HealthFirst Clinics Network",
+      metrics: "Reduced patient no-shows by 88%",
+    },
+    {
+      quote: "Our abandoned cart recovery revenue tripled in the first month. The WhatyPie implementation team didn't just hand us software — they monitored and fine-tuned our AI prompts until it performed like our best sales rep.",
+      author: "Rohan Kapoor",
+      title: "Head of Growth",
+      company: "LuxeVibe E-Commerce",
+      metrics: "3.4x ROI on AI Automation",
+    },
+  ];
 
   return (
-    <section id="testimonials" className="bg-(--card-testimonial-color) py-[calc(30px+(100-30)*((100vw-320px)/(1920-320)))] overflow-hidden px-0 pb-0">
-      <div className="mx-[calc(16px+(195-16)*((100vw-320px)/(1920-320)))] overflow-hidden">
-        <div className="text-center mb-[calc(12px+(35-12)*((100vw-320px)/(1920-320)))]">
-          <span className="text-[16px] font-bold uppercase tracking-[0.45em] text-primary">{data.badge || "Testimonials"}</span>
-          <h2 className="mt-2.5 text-[clamp(1.5rem,1rem+2.5vw,2.875rem)] max-w-[calc(288px+(830-288)*((100vw-320px)/(1920-320)))] font-extrabold leading-[1.2] tracking-tight text-landing-accent-dark mx-auto whitespace-pre-wrap">{data.title}</h2>
+    <section className="py-24 bg-slate-950 border-t border-slate-800 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="text-center max-w-3xl mx-auto space-y-4">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-400 text-xs font-semibold uppercase tracking-widest">
+            <Quote className="w-3.5 h-3.5" />
+            <span>Executive Testimonials</span>
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+            Trusted By Business Leaders
+          </h2>
+          <p className="text-slate-400 text-base sm:text-lg">
+            Hear directly from CEOs, COOs, and founders who transformed their operations with WhatyPie.
+          </p>
         </div>
 
-        <div className="relative pb-2 sm:pb-4">
-          <Swiper
-            modules={[Autoplay]}
-            spaceBetween={20}
-            slidesPerView={3}
-            centeredSlides={true}
-            loop={testimonialsFinal.length > 3}
-            speed={800}
-            grabCursor={true}
-            watchSlidesProgress={true}
-            observer={true}
-            observeParents={true}
-            onRealIndexChange={(swiper) => {
-              setActiveIndex(swiper.realIndex % testimonials.length);
-            }}
-            autoplay={testimonialsFinal.length > 1 ? { delay: 3000, disableOnInteraction: false } : false}
-            breakpoints={{
-              320: { slidesPerView: Math.min(1, testimonialsFinal.length), spaceBetween: 20 },
-              640: { slidesPerView: Math.min(1.5, testimonialsFinal.length), spaceBetween: 25 },
-              768: { slidesPerView: Math.min(2, testimonialsFinal.length), spaceBetween: 30 },
-              1024: { slidesPerView: Math.min(3, testimonialsFinal.length), spaceBetween: 40 },
-            }}
-            className="testimonial-swiper"
-          >
-            {testimonialsFinal.map((item, idx) => (
-              <SwiperSlide key={idx} className="h-auto! py-10 px-2 sm:px-4">
-                {({ isActive }) => (
-                  <div
-                    className={`feature-box transition-all duration-700 ease-in-out h-full max-w-117.5 max-h-104
-                      ${isActive ? "md:translate-y-4 scale-105 z-10 opacity-100" : "md:-translate-y-4 scale-95 opacity-50"}
-                    `}
-                  >
-                    <div className="testimonial-card bg-white rounded-4xl p-7 h-full flex flex-col shadow-[0_16px_60px_rgba(15,184,129,0.12)] relative ">
-                      <div className="mb-6">
-                        <div className="bg-primary w-13 h-13 rounded-[14px] flex items-center justify-center shadow-[0_6px_20px_rgba(15,184,129,0.25)]">
-                          <Quote className="text-white fill-white transform scale-x-[-1]" size={24} strokeWidth={0} />
-                        </div>
-                      </div>
+        {/* Carousel / Card display */}
+        <div className="max-w-4xl mx-auto p-8 sm:p-12 rounded-3xl bg-slate-900/60 border border-slate-800 backdrop-blur-2xl shadow-2xl relative space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex space-x-1 text-amber-400">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-5 h-5 fill-amber-400" />
+              ))}
+            </div>
+            <span className="text-xs font-mono text-emerald-400 font-bold px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
+              {testimonials[activeIndex].metrics}
+            </span>
+          </div>
 
-                      <p className="text-slate-500 text-[18px] mb-5 grow font-regular">{item.description}</p>
+          <p className="text-lg sm:text-2xl text-slate-100 font-medium leading-relaxed italic">
+            "{testimonials[activeIndex].quote}"
+          </p>
 
-                      <div className="flex items-center gap-3">
-                        <Images src={item?.user_image} alt={item?.user_name || "image"} className="w-10 h-10 max-w-10 max-h-10 rounded-full object-cover shrink-0" width={100} height={100} unoptimized />
-                        <div>
-                          <h4 className="font-bold text-landing-accent-dark text-[16px] leading-tight">{item.user_name}</h4>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[16px] text-slate-500 italic">{item.user_post}</span>
-                            <Star size={12} className="fill-landing-warning text-landing-warning ml-1 shrink-0" />
-                            <span className="text-[13px] font-bold text-landing-accent-dark">{item.rating?.toFixed(1) || "5.0"}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </SwiperSlide>
-            ))}
-          </Swiper>
+          <div className="flex items-center justify-between border-t border-slate-800/80 pt-6">
+            <div>
+              <h4 className="text-base font-bold text-white">{testimonials[activeIndex].author}</h4>
+              <p className="text-xs text-slate-400">
+                {testimonials[activeIndex].title} • <span className="text-emerald-400 font-medium">{testimonials[activeIndex].company}</span>
+              </p>
+            </div>
 
-          <div className="flex justify-center gap-2 mt-16">
-            {testimonials.map((_, i) => (
-              <span
-                key={i}
-                className={`block rounded-full transition-all duration-300 cursor-pointer
-                  ${activeIndex === i ? "w-6 h-2.5 bg-primary" : "w-2.5 h-2.5 bg-gray-300"}`}
-              />
-            ))}
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setActiveIndex((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1))}
+                className="p-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-white transition"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setActiveIndex((prev) => (prev + 1) % testimonials.length)}
+                className="p-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-white transition"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </section>
   );
 };
-
-export default Testimonial;

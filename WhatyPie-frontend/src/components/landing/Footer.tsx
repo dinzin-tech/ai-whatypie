@@ -1,141 +1,105 @@
 "use client";
 
-import WhatyPieLogo from "@/public/assets/logos/WhatyPie-logo.png";
-import { ROUTES } from "@/src/constants";
-import { useAppSelector } from "@/src/redux/hooks";
-import Images from "@/src/shared/Image";
-import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import React from "react";
-import { FooterProps } from "../../types/landingPage";
-import { useGetPublicPagesQuery } from "@/src/redux/api/pageApi";
-import { FOOTEROPTIONS } from "@/src/data";
+import Image from "next/image";
+import Link from "next/link";
+import { Sparkles, Mail, Phone, Globe, ArrowUpRight, Shield } from "lucide-react";
 
-const Footer: React.FC<FooterProps> = ({ data }) => {
-  const router = useRouter();
-  const { data: publicPagesData } = useGetPublicPagesQuery();
-  const allPublicPages = publicPagesData?.data?.pages || [];
-
-  const legalSlugs = ["terms-and-conditions", "privacy-policy", "refund-policy"];
-  const publicPages = allPublicPages.filter((page) => !legalSlugs.includes(page.slug));
-  const legalPages = allPublicPages.filter((page) => legalSlugs.includes(page.slug));
-
-  const socialLinks = data.social_links && data.social_links[0] ? data.social_links[0] : null;
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
-  const { app_name, logo_dark_url } = useAppSelector((state) => state.setting);
-
-  const scrollToSection = (id: string) => {
-    const mapping: Record<string, string> = {
-      support: "contact",
-      home: "home",
-      features: "features",
-      pricing: "pricing",
-      testimonials: "testimonials",
-      faqs: "faqs",
-    };
-    const sectionId = mapping[id.toLowerCase()] || id.toLowerCase();
-    const el = document.getElementById(sectionId);
-
-    if (el) {
-      el.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    } else {
-      router.push(`${ROUTES.Landing}/#${sectionId}`);
-    }
-  };
-
-  const socialLinksArray = [
-    { icon: <Twitter size={16} />, label: "Twitter", href: socialLinks?.twitter || "#" },
-    { icon: <Facebook size={16} />, label: "Facebook", href: socialLinks?.facebook || "#" },
-    { icon: <Instagram size={16} />, label: "Instagram", href: socialLinks?.instagram || "#" },
-    { icon: <Linkedin size={16} />, label: "LinkedIn", href: socialLinks?.linkedin || "#" },
-  ].filter((link) => link.href !== "#" || link.label === "Twitter");
-
+export const Footer: React.FC = () => {
   return (
-    <footer className="footer rounded-t-lg px-6 md:px-12 lg:px-[calc(20px+(243-20)*((100vw-320px)/(1920-320)))] pt-12 pb-8 text-white bg-landing-theme-dark">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-[calc(16px+(32-16)*((100vw-320px)/(1920-320)))] pb-8 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-3">
-            <Images src={logo_dark_url || WhatyPieLogo} alt={`${app_name || "WhatyPie"} logo`} className="h-7.75 object-contain" width={100} height={100} />
-          </Link>
-        </div>
+    <footer className="bg-slate-950 text-slate-400 border-t border-slate-800/80 pt-16 pb-12 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Brand Col */}
+          <div className="space-y-4 md:col-span-1">
+            <Link href="/" className="flex items-center space-x-3 group">
+              <Image
+                src="/assets/logos/whatypie-logo.png"
+                alt="WhatyPie Logo"
+                width={190}
+                height={52}
+                className="h-11 sm:h-12 w-auto object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300"
+              />
+            </Link>
 
-        <div className="flex gap-6.25 flex-wrap justify-end">
-          <div className="flex flex-wrap justify-center md:justify-end gap-x-8 gap-y-4">
-            {socialLinksArray.map(({ icon, label, href }) => (
-              <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="group transition duration-300 flex items-center gap-2 text-sm text-white hover:text-primary transition-colors">
-                <div className="w-10 h-10 rounded-full border border-white flex items-center justify-center group-hover:text-primary group-hover:border-primary transition duration-300">{icon}</div>
-                <span className="group-hover:text-primary transition duration-300">{label}</span>
-              </a>
-            ))}
+            <p className="text-xs text-slate-400 leading-relaxed">
+              WhatyPie is an enterprise AI Automation & Business Transformation Agency. We design, build, and optimize intelligent business systems.
+            </p>
+
+            <div className="space-y-1.5 text-xs text-slate-300">
+              <div className="flex items-center space-x-2">
+                <Globe className="w-4 h-4 text-emerald-400" />
+                <a href="https://www.whatypie.in" target="_blank" rel="noreferrer" className="hover:text-white transition">
+                  www.whatypie.in
+                </a>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Mail className="w-4 h-4 text-emerald-400" />
+                <a href="mailto:contact@whatypie.in" className="hover:text-white transition">
+                  contact@whatypie.in
+                </a>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Phone className="w-4 h-4 text-emerald-400" />
+                <a href="tel:7411001943" className="hover:text-white transition">
+                  +91 7411001943
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Solutions Links */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Solutions</h4>
+            <ul className="space-y-2 text-xs">
+              <li><a href="#solutions" className="hover:text-emerald-400 transition">AI Agents</a></li>
+              <li><a href="#solutions" className="hover:text-emerald-400 transition">Customer Support AI</a></li>
+              <li><a href="#solutions" className="hover:text-emerald-400 transition">Sales Automation</a></li>
+              <li><a href="#solutions" className="hover:text-emerald-400 transition">Lead Qualification</a></li>
+              <li><a href="#solutions" className="hover:text-emerald-400 transition">Marketing Automation</a></li>
+              <li><a href="#solutions" className="hover:text-emerald-400 transition">Appointment Booking</a></li>
+            </ul>
+          </div>
+
+          {/* Services & Industries */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Industries</h4>
+            <ul className="space-y-2 text-xs">
+              <li><a href="#industries" className="hover:text-emerald-400 transition">Real Estate</a></li>
+              <li><a href="#industries" className="hover:text-emerald-400 transition">Healthcare & Clinics</a></li>
+              <li><a href="#industries" className="hover:text-emerald-400 transition">E-Commerce & Retail</a></li>
+              <li><a href="#industries" className="hover:text-emerald-400 transition">Finance & Insurance</a></li>
+              <li><a href="#industries" className="hover:text-emerald-400 transition">Education & Admissions</a></li>
+              <li><a href="#industries" className="hover:text-emerald-400 transition">Logistics & Enterprise</a></li>
+            </ul>
+          </div>
+
+          {/* Company & Legal */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Company & Legal</h4>
+            <ul className="space-y-2 text-xs">
+              <li><a href="#why-us" className="hover:text-emerald-400 transition">About WhatyPie</a></li>
+              <li><a href="#process" className="hover:text-emerald-400 transition">Our Delivery Process</a></li>
+              <li><a href="#case-studies" className="hover:text-emerald-400 transition">Case Studies</a></li>
+              <li><a href="#faq" className="hover:text-emerald-400 transition">FAQ</a></li>
+              <li><Link href="/auth/login" className="hover:text-emerald-400 transition">Client Login</Link></li>
+            </ul>
           </div>
         </div>
-      </div>
 
-      <div className="relative flex flex-col lg:flex-row gap-y-[calc(16px+(64-16)*((100vw-320px)/(1920-320)))] lg:gap-y-0">
-        <div className="hidden lg:block absolute inset-y-0 border-r border-white/10 pointer-events-none" style={{ left: "41.67%", height: "calc(100% + 49px)" }} />
-
-        <div className="flex flex-col gap-[calc(8px+(28-8)*((100vw-320px)/(1920-320)))] pt-10 lg:pr-16 w-full lg:w-5/12 shrink-0 [@media(max-width:576px)]:justify-center [@media(max-width:576px)]:text-center [@media(max-width:576px)]:items-center">
-          <h2 className="text-[calc(20px+(46-20)*((100vw-320px)/(1920-320)))] font-extrabold leading-tight whitespace-pre-wrap">{data.cta_title}</h2>
-          <p className="text-[16px] text-white/50 leading-relaxed whitespace-pre-wrap">{data.cta_description}</p>
-
-          <div className="flex gap-3 flex-wrap [@media(max-width:347px)]:justify-center">
-            {data.cta_buttons?.map((btn, idx) => (
-              <button
-                key={idx}
-                className={idx === 0 ? "bg-primary hover:bg-primary text-white font-bold text-sm py-3 px-7 rounded-xl transition-colors" : "bg-transparent border-2 border-primary hover:bg-primary text-white font-bold text-sm py-3 px-7 rounded-xl transition-colors"}
-                onClick={() => {
-                  if (isAuthenticated) {
-                    const isAgent = user?.role === "agent";
-                    const targetLink = isAgent ? ROUTES.WAChat : btn.link;
-                    router.push(targetLink);
-                  } else {
-                    router.push(ROUTES.Login);
-                  }
-                }}
-              >
-                {btn.text}
-              </button>
-            ))}
+        <div className="border-t border-slate-900 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 space-y-4 sm:space-y-0">
+          <div>
+            © {new Date().getFullYear()} WhatyPie Systems. All rights reserved. Building Intelligent Businesses Through AI.
           </div>
-        </div>
-
-        <div className="lg:gap-y-10 pt-4 lg:pt-10 flex-1 lg:pl-16 sm:columns-3 columns-2">
-          {FOOTEROPTIONS.map((col, i) => (
-            <div key={i} className="flex flex-col gap-2 mb-5">
-              <a onClick={() => scrollToSection(col.toLowerCase())} className="text-[16px] text-white hover:text-primary transition-colors cursor-pointer">
-                {col}
-              </a>
-            </div>
-          ))}
-          {publicPages.map((page) => (
-            <div key={page._id} className="flex flex-col gap-2 mb-5">
-              <Link href={`/page/${page.slug}`} className="text-[16px] text-white hover:text-primary transition-colors">
-                {page.title}
-              </Link>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6">
-        <p className="text-[18px] text-white">© {data.copy_rights_text || `${app_name || "WhatyPie"} 2026. All Rights Reserved.`}</p>
-        <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-[18px] text-white">
-          {legalPages.map((page, index) => (
-            <React.Fragment key={page._id}>
-              <Link href={`/page/${page.slug}`} className="hover:text-white transition-colors">
-                {page.title}
-              </Link>
-              {index < legalPages.length - 1 && <span className="text-white">|</span>}
-            </React.Fragment>
-          ))}
+          <div className="flex items-center space-x-4">
+            <span className="hover:text-slate-400 cursor-pointer">Privacy Policy</span>
+            <span>•</span>
+            <span className="hover:text-slate-400 cursor-pointer">Terms of Service</span>
+            <span>•</span>
+            <span className="hover:text-slate-400 cursor-pointer">Security & Compliance</span>
+          </div>
         </div>
       </div>
     </footer>
   );
 };
-
-export default Footer;

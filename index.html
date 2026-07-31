@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhatyPie — AI Automation & Business Transformation Company</title>
+  <meta name="description" content="We design, build, and manage AI-powered automation systems that streamline operations, increase productivity, and accelerate business growth." />
+  
+  <!-- Favicon -->
+  <link rel="icon" href="./whatypie-logo.png" type="image/png" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #020617;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #059669;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #10b981;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500 selection:text-slate-950 antialiased overflow-x-hidden">
+
+  <!-- ==================== HEADER / NAVIGATION ==================== -->
+  <header id="header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-slate-950/90 backdrop-blur-xl border-b border-emerald-500/20 py-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <a href="#" class="flex items-center space-x-3 group">
+        <img src="./whatypie-logo.png" alt="WhatyPie Logo" class="h-12 sm:h-14 w-auto object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-300" />
+      </a>
+
+      <!-- Desktop Nav Links -->
+      <nav class="hidden lg:flex items-center space-x-1 bg-slate-900/80 p-1.5 rounded-full border border-slate-800 backdrop-blur-md">
+        <a href="#services" class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-emerald-950/80 hover:text-emerald-300 rounded-full transition">Services</a>
+        <a href="#solutions" class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-emerald-950/80 hover:text-emerald-300 rounded-full transition">Solutions</a>
+        <a href="#industries" class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-emerald-950/80 hover:text-emerald-300 rounded-full transition">Industries</a>
+        <a href="#process" class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-emerald-950/80 hover:text-emerald-300 rounded-full transition">Process</a>
+        <a href="#why-us" class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-emerald-950/80 hover:text-emerald-300 rounded-full transition">Why Us</a>
+        <a href="#platform" class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-emerald-950/80 hover:text-emerald-300 rounded-full transition">Platform</a>
+        <a href="#case-studies" class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-emerald-950/80 hover:text-emerald-300 rounded-full transition">Case Studies</a>
+        <a href="#faq" class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-emerald-950/80 hover:text-emerald-300 rounded-full transition">FAQ</a>
+      </nav>
+
+      <!-- Action Button -->
+      <div class="hidden lg:flex items-center space-x-3">
+        <button onclick="openModal()" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-full shadow-lg shadow-emerald-600/30 hover:scale-105 transition">
+          Book AI Strategy Call
+        </button>
+      </div>
+
+      <!-- Mobile Hamburger Button -->
+      <button onclick="toggleMobileMenu()" class="lg:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+      </button>
+    </div>
+
+    <!-- Mobile Drawer -->
+    <div id="mobileMenu" class="hidden lg:hidden bg-slate-950/95 border-b border-slate-800 px-4 pt-4 pb-6 space-y-3">
+      <a href="#services" onclick="toggleMobileMenu()" class="block px-3 py-2 text-sm text-slate-200 hover:bg-emerald-950/60 rounded-xl">Services</a>
+      <a href="#solutions" onclick="toggleMobileMenu()" class="block px-3 py-2 text-sm text-slate-200 hover:bg-emerald-950/60 rounded-xl">Solutions</a>
+      <a href="#industries" onclick="toggleMobileMenu()" class="block px-3 py-2 text-sm text-slate-200 hover:bg-emerald-950/60 rounded-xl">Industries</a>
+      <a href="#process" onclick="toggleMobileMenu()" class="block px-3 py-2 text-sm text-slate-200 hover:bg-emerald-950/60 rounded-xl">Process</a>
+      <a href="#why-us" onclick="toggleMobileMenu()" class="block px-3 py-2 text-sm text-slate-200 hover:bg-emerald-950/60 rounded-xl">Why Us</a>
+      <a href="#platform" onclick="toggleMobileMenu()" class="block px-3 py-2 text-sm text-slate-200 hover:bg-emerald-950/60 rounded-xl">Platform</a>
+      <a href="#case-studies" onclick="toggleMobileMenu()" class="block px-3 py-2 text-sm text-slate-200 hover:bg-emerald-950/60 rounded-xl">Case Studies</a>
+      <a href="#faq" onclick="toggleMobileMenu()" class="block px-3 py-2 text-sm text-slate-200 hover:bg-emerald-950/60 rounded-xl">FAQ</a>
+      <button onclick="toggleMobileMenu(); openModal();" class="w-full py-3 bg-emerald-600 text-white font-bold text-sm rounded-xl shadow-lg">
+        Book Free AI Strategy Call
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== HERO SECTION ==================== -->
+  <section class="relative min-h-screen pt-32 pb-20 overflow-hidden bg-slate-950 flex flex-col justify-center">
+    <!-- Green Ambient Glow -->
+    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[450px] bg-gradient-to-tr from-emerald-600/25 via-emerald-500/15 to-teal-700/0 rounded-full blur-[140px] pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="text-center max-w-4xl mx-auto space-y-6">
+        
+        <!-- Top Badge -->
+        <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-emerald-950/80 border border-emerald-500/40 backdrop-blur-md shadow-lg shadow-emerald-500/10">
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span class="text-xs font-semibold text-emerald-300 uppercase tracking-widest">
+            AI Automation & Business Transformation Company
+          </span>
+        </div>
+
+        <!-- Main Headline -->
+        <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.08]">
+          Automate Your Business. <br />
+          <span class="bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-300 bg-clip-text text-transparent">
+            Accelerate Your Growth.
+          </span>
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="text-lg sm:text-xl text-slate-300 max-w-3xl mx-auto font-normal leading-relaxed">
+          We design, build, and manage AI-powered automation systems that streamline operations, increase productivity, improve customer experiences, and help businesses grow faster.
+        </p>
+
+        <!-- Action CTAs -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <button onclick="openModal()" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-base rounded-2xl shadow-[0_0_35px_rgba(5,150,105,0.4)] hover:scale-105 transition flex items-center justify-center space-x-2">
+            <span>Book Free AI Strategy Call</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </button>
+
+          <a href="#services" class="w-full sm:w-auto px-8 py-4 bg-slate-900/80 border border-emerald-500/30 hover:border-emerald-400 text-emerald-300 font-semibold text-base rounded-2xl backdrop-blur-md hover:text-white transition flex items-center justify-center space-x-2">
+            <span>Explore Solutions</span>
+          </a>
+        </div>
+
+        <!-- Proof Pills -->
+        <div class="flex flex-wrap items-center justify-center gap-6 pt-4 text-xs font-medium text-slate-300">
+          <div class="flex items-center space-x-1.5">
+            <span class="text-emerald-400">✓</span>
+            <span>Done-For-You Implementation</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="text-emerald-400">✓</span>
+            <span>Enterprise Security Compliant</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="text-emerald-400">✓</span>
+            <span>24/7 AI System Optimization</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- WHATSAPP AI VISUAL INTERFACE MOCKUP -->
+      <div class="mt-16 relative max-w-5xl mx-auto">
+        <div class="p-4 sm:p-6 rounded-3xl bg-slate-900/90 border border-emerald-500/30 backdrop-blur-2xl shadow-[0_25px_90px_rgba(0,0,0,0.9)] overflow-hidden">
+          
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            
+            <!-- Left: Authentic WhatsApp Interface Window -->
+            <div class="lg:col-span-8 rounded-2xl bg-[#0b141a] border border-[#202c33] shadow-2xl overflow-hidden text-slate-100 flex flex-col font-sans">
+              
+              <!-- 1. WhatsApp Header -->
+              <div class="bg-[#202c33] px-4 py-3 flex items-center justify-between border-b border-[#2a3942]">
+                <div class="flex items-center space-x-3">
+                  <div class="relative">
+                    <div class="w-10 h-10 rounded-full bg-[#00a884] flex items-center justify-center text-slate-950 font-bold text-sm shadow-md">
+                      🤖
+                    </div>
+                    <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#00a884] ring-2 ring-[#202c33]"></span>
+                  </div>
+                  <div>
+                    <div class="text-sm font-bold text-[#e9edef] flex items-center space-x-1.5">
+                      <span>WhatyPie AI Assistant</span>
+                      <span class="px-1.5 py-0.2 text-[10px] font-semibold bg-[#00a884]/20 text-[#00a884] rounded border border-[#00a884]/30">
+                        Official WABA
+                      </span>
+                    </div>
+                    <div class="text-[11px] text-[#8696a0] flex items-center space-x-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-[#00a884] animate-pulse"></span>
+                      <span>online • 24/7 Cognitive AI Agent</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="text-[#8696a0] text-xs font-mono">WhatsApp Web UI</div>
+              </div>
+
+              <!-- 2. WhatsApp Chat Canvas -->
+              <div class="p-4 space-y-4 text-xs min-h-[280px] max-h-[340px] overflow-y-auto bg-[#0b141a]">
+                
+                <div class="flex justify-center my-1">
+                  <span class="bg-[#111b21] text-[#8696a0] text-[10px] font-mono px-3 py-1 rounded-md border border-[#202c33]">
+                    TODAY • SECURE END-TO-END ENCRYPTED
+                  </span>
+                </div>
+
+                <!-- Client Message -->
+                <div class="flex justify-start">
+                  <div class="bg-[#202c33] text-[#e9edef] p-3 rounded-2xl rounded-tl-none max-w-[85%] shadow-md border border-[#2a3942]/60">
+                    <div class="text-[10px] font-bold text-[#00a884] mb-0.5">Real Estate Buyer Prospect</div>
+                    <p class="leading-relaxed">
+                      Hi, we need an AI solution for our real estate firm to qualify leads from ads and schedule site visits into Google Calendar.
+                    </p>
+                    <div class="text-[9px] text-[#8696a0] text-right font-mono mt-1">10:42 AM</div>
+                  </div>
+                </div>
+
+                <!-- AI Response Message (Official WhatsApp Green) -->
+                <div class="flex justify-end">
+                  <div class="bg-[#005c4b] text-[#e9edef] p-3.5 rounded-2xl rounded-tr-none max-w-[90%] shadow-lg space-y-2 border border-[#02735e]">
+                    <div class="flex items-center justify-between text-[10px] font-semibold text-[#8696a0] border-b border-[#007a63] pb-1">
+                      <span class="text-white font-bold">WhatyPie AI Agent</span>
+                      <span class="text-[9px] bg-[#00a884]/30 text-[#aebac1] px-1.5 py-0.5 rounded font-mono">
+                        ⚡ 0.2s Response
+                      </span>
+                    </div>
+                    
+                    <p class="leading-relaxed text-[#e9edef]">
+                      Hello! Absolutely. Our Real Estate AI Blueprint automatically qualifies buyer intent, shares digital brochures, and reserves calendar appointments.
+                    </p>
+
+                    <!-- Interactive Buttons -->
+                    <div class="space-y-1.5 pt-1">
+                      <div class="w-full py-1.5 px-3 bg-[#202c33] text-[#53bdeb] font-semibold text-[11px] rounded-lg text-center border border-[#3b4a54]">
+                        📅 1. Reserve Site Visit Slot (Tomorrow 3:30 PM)
+                      </div>
+                      <div class="w-full py-1.5 px-3 bg-[#202c33] text-[#53bdeb] font-semibold text-[11px] rounded-lg text-center border border-[#3b4a54]">
+                        📄 2. Download Luxury Brochure PDF
+                      </div>
+                    </div>
+
+                    <div class="flex items-center justify-end space-x-1 text-[9px] text-[#8696a0] font-mono">
+                      <span>10:42 AM</span>
+                      <span class="text-[#53bdeb] font-bold">✓✓</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Booking Confirmed -->
+                <div class="flex justify-end">
+                  <div class="bg-[#005c4b] text-[#e9edef] p-3 rounded-2xl rounded-tr-none max-w-[90%] shadow-lg border border-[#02735e]">
+                    <p class="text-[11px]">
+                      ✅ <strong>Booking Confirmed!</strong> Site visit reserved for Tomorrow @ 3:30 PM. Calendar invite dispatched & CRM lead record updated (Score: 96/100 VIP).
+                    </p>
+                    <div class="flex items-center justify-end space-x-1 text-[9px] text-[#8696a0] font-mono">
+                      <span>10:43 AM</span>
+                      <span class="text-[#53bdeb] font-bold">✓✓</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. WhatsApp Bottom Input -->
+              <div class="bg-[#202c33] p-3 flex items-center space-x-3 border-t border-[#2a3942]">
+                <div class="flex-1 bg-[#2a3942] rounded-xl px-4 py-2 text-xs text-[#8696a0] font-sans flex items-center justify-between">
+                  <span>Type a message or trigger AI automation...</span>
+                  <span class="text-[10px] text-[#00a884] font-mono font-semibold">AI Active</span>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-[#00a884] flex items-center justify-center text-slate-950 font-bold">
+                  ➤
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Real-Time System Intelligence Cards -->
+            <div class="lg:col-span-4 space-y-4">
+              <div class="p-5 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-4 shadow-xl">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-bold text-white">Live AI Intelligence</span>
+                  <span class="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/30">
+                    Active
+                  </span>
+                </div>
+
+                <div class="space-y-2.5 text-xs">
+                  <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                    <div class="text-[11px] text-slate-400">Response Speed</div>
+                    <div class="text-base font-extrabold text-emerald-400 font-mono">0.2 Seconds</div>
+                  </div>
+
+                  <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                    <div class="text-[11px] text-slate-400">Lead Qualification Rate</div>
+                    <div class="text-base font-extrabold text-emerald-400 font-mono">94.8% Accuracy</div>
+                  </div>
+
+                  <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                    <div class="text-[11px] text-slate-400">CRM Auto-Sync Status</div>
+                    <div class="text-xs font-bold text-emerald-300 font-mono">✓ Auto-Synced</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-5 rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 border border-emerald-500/40 text-center space-y-3 shadow-xl">
+                <div class="text-xs font-bold text-white">Deploy this exact WhatsApp AI engine for your business</div>
+                <button onclick="openModal()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-emerald-600/30">
+                  Book Free AI Strategy Call →
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== TRUST SECTION ==================== -->
+  <section class="py-16 bg-slate-950/90 border-y border-slate-800/80 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 text-center space-y-1">
+          <div class="text-2xl sm:text-4xl font-extrabold bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
+            100+
+          </div>
+          <div class="text-xs text-slate-300 font-medium">Autonomous Workflows Executed</div>
+        </div>
+        <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 text-center space-y-1">
+          <div class="text-2xl sm:text-4xl font-extrabold bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
+            98.4%
+          </div>
+          <div class="text-xs text-slate-300 font-medium">Average Response Time Reduction</div>
+        </div>
+        <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 text-center space-y-1">
+          <div class="text-2xl sm:text-4xl font-extrabold bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
+            ₹45,000,000+
+          </div>
+          <div class="text-xs text-slate-300 font-medium">Client Operational Cost Saved</div>
+        </div>
+        <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 text-center space-y-1">
+          <div class="text-2xl sm:text-4xl font-extrabold bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
+            99.99%
+          </div>
+          <div class="text-xs text-slate-300 font-medium">System Reliability & Uptime</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SERVICES SECTION ("WHAT WE DO") ==================== -->
+  <section id="services" class="py-24 bg-slate-950 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+      <div class="text-center max-w-3xl mx-auto space-y-4">
+        <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 text-xs font-semibold uppercase tracking-widest">
+          <span>Full-Stack AI Transformation</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+          What We Do
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg">
+          We deliver complete end-to-end AI systems — combining custom strategy, intelligent software, and ongoing optimization.
+        </p>
+      </div>
+
+      <!-- Services Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/40 transition duration-300 flex flex-col justify-between group">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-700 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                🤖
+              </div>
+              <span class="text-[10px] font-mono font-bold text-emerald-300 px-2.5 py-1 rounded-full bg-emerald-950 border border-emerald-500/30">LLM Agents</span>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-white group-hover:text-emerald-300 transition">AI Automation</h3>
+              <p class="text-xs font-semibold text-emerald-400 mb-2">Autonomous Agents & Cognitive Pipelines</p>
+              <p class="text-xs text-slate-300 leading-relaxed">We deploy intelligent AI agents that handle complex decision-making, natural language inquiries, and multi-step tasks across your business.</p>
+            </div>
+          </div>
+          <button onclick="openModal()" class="mt-6 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition flex items-center space-x-1">
+            <span>Discuss Solution Blueprint →</span>
+          </button>
+        </div>
+
+        <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/40 transition duration-300 flex flex-col justify-between group">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-700 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                ⚡
+              </div>
+              <span class="text-[10px] font-mono font-bold text-emerald-300 px-2.5 py-1 rounded-full bg-emerald-950 border border-emerald-500/30">Zero Latency</span>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-white group-hover:text-emerald-300 transition">Business Automation</h3>
+              <p class="text-xs font-semibold text-emerald-400 mb-2">End-to-End Operational Efficiency</p>
+              <p class="text-xs text-slate-300 leading-relaxed">Streamline day-to-day business operations by eliminating manual handoffs, repetitive data entry, and fragmented operational bottlenecks.</p>
+            </div>
+          </div>
+          <button onclick="openModal()" class="mt-6 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition flex items-center space-x-1">
+            <span>Discuss Solution Blueprint →</span>
+          </button>
+        </div>
+
+        <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/40 transition duration-300 flex flex-col justify-between group">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-700 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                💬
+              </div>
+              <span class="text-[10px] font-mono font-bold text-emerald-300 px-2.5 py-1 rounded-full bg-emerald-950 border border-emerald-500/30">Official WABA</span>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-white group-hover:text-emerald-300 transition">WhatsApp Automation</h3>
+              <p class="text-xs font-semibold text-emerald-400 mb-2">Enterprise Conversational AI</p>
+              <p class="text-xs text-slate-300 leading-relaxed">Harness official WhatsApp Business API with AI agents for instant customer support, catalog browsing, and instant appointment booking.</p>
+            </div>
+          </div>
+          <button onclick="openModal()" class="mt-6 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition flex items-center space-x-1">
+            <span>Discuss Solution Blueprint →</span>
+          </button>
+        </div>
+
+        <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/40 transition duration-300 flex flex-col justify-between group">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-700 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                📊
+              </div>
+              <span class="text-[10px] font-mono font-bold text-emerald-300 px-2.5 py-1 rounded-full bg-emerald-950 border border-emerald-500/30">Pipeline Sync</span>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-white group-hover:text-emerald-300 transition">CRM Solutions</h3>
+              <p class="text-xs font-semibold text-emerald-400 mb-2">Unified Contact & Pipeline Intelligence</p>
+              <p class="text-xs text-slate-300 leading-relaxed">Implement and customize centralized CRM architectures that track customer journeys, predict intent, and automate sales follow-ups.</p>
+            </div>
+          </div>
+          <button onclick="openModal()" class="mt-6 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition flex items-center space-x-1">
+            <span>Discuss Solution Blueprint →</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== TRANSFORMATION MATRIX ==================== -->
+  <section class="py-24 bg-slate-950/95 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+      <div class="text-center max-w-3xl mx-auto space-y-4">
+        <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 text-xs font-semibold uppercase tracking-widest">
+          <span>The Transformation Impact</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+          How WhatyPie Reinvents Your Business
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg">
+          See the stark contrast between legacy manual operations and an AI-automated enterprise system.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Without WhatyPie -->
+        <div class="p-8 rounded-3xl bg-rose-950/20 border border-rose-900/40 space-y-6">
+          <div class="flex items-center justify-between border-b border-rose-900/40 pb-4">
+            <h3 class="text-xl font-bold text-rose-200">Without WhatyPie</h3>
+            <span class="text-xs font-mono text-rose-400 px-3 py-1 bg-rose-950/60 rounded-full border border-rose-800/40">High Friction</span>
+          </div>
+          <div class="space-y-3 text-xs text-rose-200">
+            <div class="p-3 bg-rose-950/30 rounded-xl border border-rose-900/20">❌ <strong>Manual Repetitive Work:</strong> Teams waste 60%+ day on data entry.</div>
+            <div class="p-3 bg-rose-950/30 rounded-xl border border-rose-900/20">❌ <strong>Slow Response Times:</strong> Leads wait hours, causing 70% drop-off.</div>
+            <div class="p-3 bg-rose-950/30 rounded-xl border border-rose-900/20">❌ <strong>Disconnected Systems:</strong> CRM, messaging, and billing operate in silos.</div>
+            <div class="p-3 bg-rose-950/30 rounded-xl border border-rose-900/20">❌ <strong>Escalating Overhead:</strong> Scaling requires hiring more staff, shrinking margins.</div>
+          </div>
+        </div>
+
+        <!-- With WhatyPie -->
+        <div class="p-8 rounded-3xl bg-emerald-950/30 border border-emerald-500/40 space-y-6 shadow-[0_0_50px_rgba(5,150,105,0.2)]">
+          <div class="flex items-center justify-between border-b border-emerald-800/40 pb-4">
+            <h3 class="text-xl font-bold text-emerald-100">With WhatyPie</h3>
+            <span class="text-xs font-mono text-white px-3 py-1 bg-emerald-600 rounded-full font-bold shadow-md">10x Performance</span>
+          </div>
+          <div class="space-y-3 text-xs text-slate-100">
+            <div class="p-3 bg-slate-900/80 rounded-xl border border-emerald-500/30">✅ <strong>Autonomous AI Workflows:</strong> Smart agents execute operations 24/7.</div>
+            <div class="p-3 bg-slate-900/80 rounded-xl border border-emerald-500/30">✅ <strong>Sub-Second Responses:</strong> Instant engagement qualifies & books leads.</div>
+            <div class="p-3 bg-slate-900/80 rounded-xl border border-emerald-500/30">✅ <strong>Centralized Intelligence:</strong> All customer chats & deals auto-synced.</div>
+            <div class="p-3 bg-slate-900/80 rounded-xl border border-emerald-500/30">✅ <strong>Exponential ROI & Scale:</strong> Scale business 10x without extra headcount.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== WHY CHOOSE US ==================== -->
+  <section id="why-us" class="py-24 bg-slate-950 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+      <div class="text-center max-w-3xl mx-auto space-y-4">
+        <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 text-xs font-semibold uppercase tracking-widest">
+          <span>Our Operating Philosophy</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+          Why Business Leaders Partner With Us
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="p-8 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/40 transition space-y-3">
+          <h3 class="text-lg text-slate-400">We don't sell software. <br /><span class="text-2xl font-extrabold text-white">We build systems.</span></h3>
+          <p class="text-sm text-slate-300">Software is useless without proper business logic. We design custom AI architectures that reflect your exact operational rules and company culture.</p>
+        </div>
+
+        <div class="p-8 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/40 transition space-y-3">
+          <h3 class="text-lg text-slate-400">We don't automate tasks. <br /><span class="text-2xl font-extrabold text-white">We automate businesses.</span></h3>
+          <p class="text-sm text-slate-300">Isolated zap bots create fragmented chaos. We connect your entire workflow — from initial ad click to final invoice and customer review.</p>
+        </div>
+
+        <div class="p-8 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/40 transition space-y-3">
+          <h3 class="text-lg text-slate-400">We don't replace people. <br /><span class="text-2xl font-extrabold text-white">We empower teams.</span></h3>
+          <p class="text-sm text-slate-300">Our AI agents handle repetitive 80% baseline tasks so your human team can focus on high-value strategy, relationships, and deal closing.</p>
+        </div>
+
+        <div class="p-8 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/40 transition space-y-3">
+          <h3 class="text-lg text-slate-400">We don't disappear after launch. <br /><span class="text-2xl font-extrabold text-white">We continuously optimize.</span></h3>
+          <p class="text-sm text-slate-300">AI requires ongoing memory updates and prompt refinement. We act as your dedicated AI engineering team for continuous accuracy.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== FINAL CTA ==================== -->
+  <section class="py-24 bg-slate-950 relative overflow-hidden">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="p-10 sm:p-16 rounded-3xl bg-slate-900/90 border border-emerald-500/30 backdrop-blur-2xl text-center space-y-8 shadow-[0_0_80px_rgba(5,150,105,0.2)]">
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+          Ready to Build an <br />
+          <span class="bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-300 bg-clip-text text-transparent">
+            AI-Powered Business?
+          </span>
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto">
+          Let's identify the highest-impact automation opportunities in your business and build a system that saves time, reduces costs, and accelerates growth.
+        </p>
+
+        <div class="flex justify-center">
+          <button onclick="openModal()" class="px-8 py-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 text-white font-bold text-base rounded-2xl shadow-xl shadow-emerald-600/30 hover:scale-105 transition">
+            Book Free AI Strategy Call →
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="bg-slate-950 text-slate-400 border-t border-slate-800/80 pt-16 pb-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div class="space-y-4">
+          <span class="text-xl font-extrabold text-white">WhatyPie<span class="text-emerald-400">.</span></span>
+          <p class="text-xs text-slate-400">WhatyPie is an enterprise AI Automation & Business Transformation Agency.</p>
+          <div class="space-y-1 text-xs text-slate-300">
+            <div>🌐 <a href="https://www.whatypie.in" target="_blank" class="hover:text-white">www.whatypie.in</a></div>
+            <div>✉️ <a href="mailto:contact@whatypie.in" class="hover:text-white">contact@whatypie.in</a></div>
+            <div>📞 <a href="tel:7411001943" class="hover:text-white">+91 7411001943</a></div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-xs">
+          <h4 class="font-bold text-white uppercase">Solutions</h4>
+          <div><a href="#solutions" class="hover:text-emerald-400">AI Agents</a></div>
+          <div><a href="#solutions" class="hover:text-emerald-400">Customer Support AI</a></div>
+          <div><a href="#solutions" class="hover:text-emerald-400">Sales Automation</a></div>
+        </div>
+
+        <div class="space-y-2 text-xs">
+          <h4 class="font-bold text-white uppercase">Industries</h4>
+          <div><a href="#industries" class="hover:text-emerald-400">Real Estate</a></div>
+          <div><a href="#industries" class="hover:text-emerald-400">Healthcare</a></div>
+          <div><a href="#industries" class="hover:text-emerald-400">E-Commerce</a></div>
+        </div>
+
+        <div class="space-y-2 text-xs">
+          <h4 class="font-bold text-white uppercase">Company</h4>
+          <div><a href="#why-us" class="hover:text-emerald-400">Why Us</a></div>
+          <div><a href="#process" class="hover:text-emerald-400">Process</a></div>
+          <div><a href="#faq" class="hover:text-emerald-400">FAQ</a></div>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-900 pt-8 text-center text-xs text-slate-500">
+        © <script>document.write(new Date().getFullYear())</script> WhatyPie Systems. All rights reserved. Building Intelligent Businesses Through AI.
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== STRATEGY CALL BOOKING MODAL ==================== -->
+  <div id="bookingModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="relative w-full max-w-xl bg-slate-900 border border-emerald-500/30 rounded-3xl p-6 md:p-8 text-white shadow-2xl space-y-6">
+      <button onclick="closeModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white font-bold text-lg">✕</button>
+
+      <div id="modalFormContainer">
+        <h3 class="text-2xl font-bold text-white">Book Your Free AI Strategy Call</h3>
+        <p class="text-xs text-slate-400 mt-1">Audit your business operations with our lead AI automation architects.</p>
+
+        <form onsubmit="handleFormSubmit(event)" class="space-y-4 mt-6">
+          <div>
+            <label class="block text-xs text-slate-300 mb-1">Full Name *</label>
+            <input required type="text" placeholder="John Doe" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-300 mb-1">Work Email *</label>
+            <input required type="email" placeholder="john@company.com" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-300 mb-1">Phone Number *</label>
+            <input required type="tel" placeholder="+91 98765 43210" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-300 mb-1">Company Name *</label>
+            <input required type="text" placeholder="Acme Corp" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500" />
+          </div>
+
+          <button type="submit" class="w-full py-3 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 text-white font-bold text-sm rounded-xl shadow-lg hover:scale-[1.01] transition">
+            Confirm & Book Session
+          </button>
+        </form>
+      </div>
+
+      <div id="modalSuccessContainer" class="hidden text-center py-8 space-y-4">
+        <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">✓</div>
+        <h4 class="text-2xl font-bold text-white">Strategy Session Requested!</h4>
+        <p class="text-xs text-slate-300 max-w-sm mx-auto">Our lead AI solutions architect will contact you within 2 hours to confirm your calendar booking.</p>
+        <button onclick="closeModal()" class="px-6 py-2 bg-slate-800 text-white rounded-xl text-xs">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Interaction Logic -->
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('hidden');
+    }
+
+    function openModal() {
+      const modal = document.getElementById('bookingModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('bookingModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      document.getElementById('modalFormContainer').classList.add('hidden');
+      document.getElementById('modalSuccessContainer').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
