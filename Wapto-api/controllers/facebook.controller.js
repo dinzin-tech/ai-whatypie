@@ -36,15 +36,22 @@ const fetchAllFacebookPages = async (accessToken, fbUserId, userId) => {
   }
 
   for (const biz of businesses) {
-    let bizPagesUrl = `https://graph.facebook.com/${FB_API_VERSION}/${biz.id}/owned_pages?access_token=${accessToken}&fields=id,name,access_token,category,picture.type(large),is_verified,business&limit=100`;
-    while (bizPagesUrl) {
-      try {
-        const bizResp = await axios.get(bizPagesUrl);
-        allPages = [...allPages, ...(bizResp.data.data || [])];
-        bizPagesUrl = bizResp.data.paging?.next || null;
-      } catch (error) {
-        console.warn(`Failed to fetch owned_pages for business ${biz.id}:`, error?.response?.data?.error?.message || error.message);
-        break;
+    const bizEndpoints = [
+      `https://graph.facebook.com/${FB_API_VERSION}/${biz.id}/owned_pages`,
+      `https://graph.facebook.com/${FB_API_VERSION}/${biz.id}/client_pages`
+    ];
+
+    for (const endpoint of bizEndpoints) {
+      let bizPagesUrl = `${endpoint}?access_token=${accessToken}&fields=id,name,access_token,category,picture.type(large),is_verified,business&limit=100`;
+      while (bizPagesUrl) {
+        try {
+          const bizResp = await axios.get(bizPagesUrl);
+          allPages = [...allPages, ...(bizResp.data.data || [])];
+          bizPagesUrl = bizResp.data.paging?.next || null;
+        } catch (error) {
+          console.warn(`Failed to fetch pages from ${endpoint}:`, error?.response?.data?.error?.message || error.message);
+          break;
+        }
       }
     }
   }
