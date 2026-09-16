@@ -1,10 +1,7 @@
 import unifiedWhatsAppService, { PROVIDER_TYPES } from '../services/whatsapp/unified-whatsapp.service.js';
-import { Message, ContactTag, ChatNote, WhatsappWaba, WhatsappPhoneNumber, Contact, Tag, ChatAssignment, User } from '../models/index.js';
+import { Message, ContactTag, ChatNote, WhatsappWaba, WhatsappPhoneNumber, Contact, Tag, ChatAssignment, User, WabaConfiguration, Workspace, FacebookConnection } from '../models/index.js';
 import { uploadSingle } from '../utils/upload.js';
-import { Setting } from '../models/index.js';
-const WHATSAPP_JID_SUFFIX = '@s.whatsapp.net';
-import axios from 'axios';
-import { WhatsappConnection } from '../models/index.js';
+import { Setting, WhatsappConnection } from '../models/index.js';
 import { assignChatToAgent as assignChatToAgentFromChat } from './chat.controller.js';
 import paymentLinkService from '../services/payment-link.service.js';
 import mongoose from 'mongoose';
@@ -1604,28 +1601,39 @@ export const connectWhatsApp = async (req, res) => {
 };
 
 export const getEmbbededSignupConnection = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user?.owner_id || req.user?.id;
   const { code, signupData, workspace_id } = req.body;
 
-  if (!code || !signupData?.waba_id || !signupData?.phone_number_id || !signupData.business_id) {
+  const wabaId = signupData?.waba_id || req.body?.waba_id || req.body?.whatsapp_business_account_id;
+  const phoneNumberId = signupData?.phone_number_id || req.body?.phone_number_id;
+
+  if (!code && !req.body?.access_token) {
     return res.status(400).json({
       success: false,
-      error: 'Invalid signup payload'
+      error: 'Authorization code or access_token is required'
     });
   }
 
-  if (processedAuthCodes.has(code)) {
+  if (!wabaId || !phoneNumberId) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid signup payload: waba_id and phone_number_id are required'
+    });
+  }
+
+  if (code && processedAuthCodes.has(code)) {
     return res.status(400).json({
       success: false,
       error: 'This authorization code has already been processed or is currently being processed.'
     });
   }
 
-  processedAuthCodes.add(code);
-  setTimeout(() => processedAuthCodes.delete(code), 5 * 60 * 1000);
+  if (code) {
+    processedAuthCodes.add(code);
+    setTimeout(() => processedAuthCodes.delete(code), 5 * 60 * 1000);
+  }
 
   try {
-
     const metaSettings = await Setting.findOne().lean();
 
     if (!metaSettings?.app_id || !metaSettings?.app_secret) {
@@ -1637,37 +1645,91 @@ export const getEmbbededSignupConnection = async (req, res) => {
 
     const { app_id: APP_ID, app_secret: APP_SECRET } = metaSettings;
 
-    const tokenRes = await axios.get(
-      'https://graph.facebook.com/v22.0/oauth/access_token',
-      {
-        params: {
-          client_id: APP_ID,
-          client_secret: APP_SECRET,
-          code
+    let accessToken = req.body?.access_token;
+    if (!accessToken && code) {
+      try {
+        const tokenRes = await axios.get(
+          'https://graph.facebook.com/v22.0/oauth/access_token',
+          {
+            params: {
+              client_id: APP_ID,
+              client_secret: APP_SECRET,
+              code
+            }
+          }
+        );
+        accessToken = tokenRes.data?.access_token;
+      } catch (tokenErr) {
+        console.error('Failed to exchange code for access_token:', tokenErr?.response?.data || tokenErr.message);
+        const fbConn = await FacebookConnection.findOne({ user_id: userId, is_active: true }).lean();
+        if (fbConn?.long_lived_access_token) {
+          accessToken = fbConn.long_lived_access_token;
+        } else {
+          return res.status(400).json({
+            success: false,
+            error: 'Failed to exchange authorization code with Meta Graph API',
+            details: tokenErr?.response?.data?.error?.message || tokenErr.message
+          });
         }
       }
-    );
+    }
 
-    const accessToken = tokenRes.data.access_token;
+    let display_phone_number = signupData?.display_phone_number || req.body?.display_phone_number;
+    let verified_name = signupData?.verified_name || req.body?.verified_name;
+    let quality_rating = signupData?.quality_rating || 'GREEN';
 
-    const phoneRes = await axios.get(
-      `https://graph.facebook.com/v22.0/${signupData.phone_number_id}`,
-      {
-        params: {
-          fields: 'display_phone_number,verified_name,quality_rating'
-        },
-        headers: {
-          Authorization: `Bearer ${accessToken}`
+    if (accessToken) {
+      try {
+        const phoneRes = await axios.get(
+          `https://graph.facebook.com/v22.0/${phoneNumberId}`,
+          {
+            params: {
+              fields: 'display_phone_number,verified_name,quality_rating'
+            },
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
+        );
+        if (phoneRes.data) {
+          display_phone_number = phoneRes.data.display_phone_number || display_phone_number;
+          verified_name = phoneRes.data.verified_name || verified_name;
+          quality_rating = phoneRes.data.quality_rating || quality_rating;
         }
+      } catch (phoneErr) {
+        console.warn('Could not fetch phone number details from Meta Graph API:', phoneErr?.response?.data?.error?.message || phoneErr.message);
       }
-    );
+    }
 
-    const { display_phone_number, verified_name, quality_rating } = phoneRes.data;
+    let businessId = signupData?.business_id || req.body?.business_id || null;
+    let wabaName = verified_name || display_phone_number || `WABA ${wabaId}`;
+
+    if (accessToken) {
+      try {
+        const wabaRes = await axios.get(
+          `https://graph.facebook.com/v22.0/${wabaId}`,
+          {
+            params: { fields: 'id,name,business' },
+            headers: { Authorization: `Bearer ${accessToken}` }
+          }
+        );
+        if (wabaRes.data) {
+          if (wabaRes.data.name) wabaName = wabaRes.data.name;
+          if (wabaRes.data.business?.id) businessId = wabaRes.data.business.id;
+        }
+      } catch (wabaErr) {
+        console.warn('Could not fetch WABA details from Meta Graph API:', wabaErr?.response?.data?.error?.message || wabaErr.message);
+      }
+    }
+
+    if (!display_phone_number) {
+      display_phone_number = phoneNumberId;
+    }
 
     if (workspace_id) {
       const existingWaba = await WhatsappWaba.findOne({
         workspace_id: workspace_id,
-        whatsapp_business_account_id: { $ne: signupData.waba_id }
+        whatsapp_business_account_id: { $ne: wabaId }
       });
 
       if (existingWaba) {
@@ -1678,52 +1740,87 @@ export const getEmbbededSignupConnection = async (req, res) => {
 
     let waba = await WhatsappWaba.findOne({
       user_id: userId,
-      whatsapp_business_account_id: signupData.waba_id,
+      whatsapp_business_account_id: wabaId,
       deleted_at: null
     });
 
     if (!waba) {
       waba = await WhatsappWaba.create({
         user_id: userId,
-        whatsapp_business_account_id: signupData.waba_id,
-        business_id: signupData.business_id,
+        created_by: req.user?.id,
+        whatsapp_business_account_id: wabaId,
+        business_id: businessId,
         app_id: APP_ID,
         access_token: accessToken,
         workspace_id,
-        name: verified_name || display_phone_number,
+        name: wabaName,
+        connection_status: 'connected',
+        provider: 'business_api',
         is_active: true
       });
     } else {
-      waba.access_token = accessToken;
-      waba.business_id = signupData.business_id,
-        waba.workspace_id = workspace_id || waba.workspace_id;
-      waba.name = verified_name || display_phone_number;
+      waba.access_token = accessToken || waba.access_token;
+      if (businessId) waba.business_id = businessId;
+      waba.workspace_id = workspace_id || waba.workspace_id;
+      waba.name = wabaName;
+      waba.connection_status = 'connected';
+      waba.provider = 'business_api';
       waba.is_active = true;
       await waba.save();
     }
 
     let phoneNumber = await WhatsappPhoneNumber.findOne({
       user_id: userId,
-      phone_number_id: signupData.phone_number_id,
+      phone_number_id: phoneNumberId,
       deleted_at: null
     });
 
     if (phoneNumber) {
       phoneNumber.waba_id = waba._id;
       phoneNumber.display_phone_number = display_phone_number;
-      phoneNumber.verified_name = verified_name;
+      phoneNumber.verified_name = verified_name || wabaName;
       phoneNumber.quality_rating = quality_rating;
       phoneNumber.is_active = true;
+      phoneNumber.is_primary = true;
       await phoneNumber.save();
     } else {
       phoneNumber = await WhatsappPhoneNumber.create({
         user_id: userId,
         waba_id: waba._id,
-        phone_number_id: signupData.phone_number_id,
+        phone_number_id: phoneNumberId,
         display_phone_number,
-        verified_name,
+        verified_name: verified_name || wabaName,
         quality_rating,
+        is_active: true,
+        is_primary: true
+      });
+    }
+
+    await WhatsappConnection.findOneAndUpdate(
+      { user_id: userId, phone_number_id: phoneNumberId },
+      {
+        user_id: userId,
+        name: verified_name || wabaName || display_phone_number,
+        access_token: accessToken,
+        registred_phone_number: display_phone_number,
+        phone_number_id: phoneNumberId,
+        whatsapp_business_account_id: wabaId,
+        app_id: APP_ID,
         is_active: true
+      },
+      { upsert: true, new: true }
+    );
+
+    let wabaConfig = await WabaConfiguration.findOne({ waba_id: wabaId });
+    if (!wabaConfig) {
+      await WabaConfiguration.create({ waba_id: wabaId });
+    }
+
+    if (workspace_id) {
+      await Workspace.findByIdAndUpdate(workspace_id, {
+        waba_id: waba._id,
+        waba_type: 'business_api',
+        connection_status: 'connected'
       });
     }
 
@@ -1748,7 +1845,6 @@ export const getEmbbededSignupConnection = async (req, res) => {
     const errorData = err.response?.data?.error || {};
     const errorMessage = errorData.message || 'Embedded signup failed';
     const subcode = errorData.error_subcode;
-
     const statusCode = err.response?.status || 500;
 
     return res.status(statusCode).json({

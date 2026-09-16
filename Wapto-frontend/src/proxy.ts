@@ -22,7 +22,13 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
-        const isGuestAllowed = pathname.startsWith(ROUTES.Landing) || pathname.startsWith("/auth");
+        const isGuestAllowed =
+          pathname === "/" ||
+          pathname === "/landing" ||
+          pathname === "/index.html" ||
+          pathname.startsWith("/socket.io") ||
+          pathname.startsWith(ROUTES.Login) ||
+          pathname.startsWith("/auth");
         return Boolean(token) || isGuestAllowed;
       },
     },

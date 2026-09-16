@@ -101,6 +101,8 @@ export const updateWabaConfiguration = async (req, res) => {
     }
 };
 
+export { getEmbbededSignupConnection as handleEmbeddedSignup } from './unified-whatsapp.controller.js';
+
 export default {
     getWabaConfiguration,
     updateWabaConfiguration

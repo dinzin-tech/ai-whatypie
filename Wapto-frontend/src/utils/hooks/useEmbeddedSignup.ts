@@ -16,8 +16,9 @@ export const useEmbeddedSignup = (onFinish: (code: string, data: any) => void) =
       try {
         const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
 
-        if (payload.type === "WA_EMBEDDED_SIGNUP" && payload.event === "FINISH") {
-          setSignupData(payload.data);
+        if (payload.type === "WA_EMBEDDED_SIGNUP" && (payload.event === "FINISH" || payload.event === "RESPONSE")) {
+          const data = payload.data || payload;
+          setSignupData(data);
         }
       } catch {}
     };
@@ -41,6 +42,8 @@ export const useEmbeddedSignup = (onFinish: (code: string, data: any) => void) =
       (res: any) => {
         if (res.authResponse?.code) {
           setAuthCode(res.authResponse.code);
+        } else if (res.authResponse?.accessToken) {
+          setAuthCode(res.authResponse.accessToken);
         }
       },
       {

@@ -49,27 +49,41 @@ const fetchAllFacebookPages = async (accessToken, fbUserId, userId) => {
     }
   }
 
-  let foundWabaNo = false;
-  try {
-    const wabaRes = await axios.get(`https://graph.facebook.com/${FB_API_VERSION}/me/whatsapp_business_accounts`, {
-      params: { fields: 'id', access_token: accessToken }
-    });
-    const wabas = wabaRes.data.data || [];
-    foundWabaNo = (wabas.length > 0);
-  } catch (err) {
-  }
-
-  if (!foundWabaNo && userId) {
-    const localWaba = await WhatsappPhoneNumber.findOne({ user_id: userId, is_active: true, deleted_at: null }).lean();
-    foundWabaNo = !!localWaba;
-  }
+  // Fetch user's registered WhatsApp phone numbers to match against page WhatsApp numbers
+  const userPhoneNumbers = userId
+    ? await WhatsappPhoneNumber.find({ user_id: userId, is_active: true, deleted_at: null }).lean()
+    : [];
+  const knownPhoneSet = new Set(userPhoneNumbers.map(p => (p.display_phone_number || p.phone_number || '').replace(/\D/g, '')));
 
   const uniquePages = [];
   const pageIds = new Set();
 
   for (const page of allPages) {
     if (!pageIds.has(page.id)) {
-      page.is_whatsapp_connected = foundWabaNo;
+      let isPageWhatsappConnected = false;
+      const pageToken = page.access_token || accessToken;
+      try {
+        const pageWaRes = await axios.get(`https://graph.facebook.com/${FB_API_VERSION}/${page.id}`, {
+          params: { fields: 'whatsapp_number,connected_whatsapp_business_account', access_token: pageToken }
+        });
+        const waNum = pageWaRes.data?.whatsapp_number;
+        const connectedWaba = pageWaRes.data?.connected_whatsapp_business_account?.id;
+        
+        if (waNum) {
+          isPageWhatsappConnected = true;
+          page.whatsapp_number = waNum;
+        } else if (connectedWaba) {
+          isPageWhatsappConnected = true;
+        } else if (knownPhoneSet.size > 0 && pageWaRes.data?.whatsapp_number) {
+          const cleanPageNum = pageWaRes.data.whatsapp_number.replace(/\D/g, '');
+          isPageWhatsappConnected = knownPhoneSet.has(cleanPageNum);
+        }
+      } catch (err) {
+        // Fallback: If page inspection fails, leave as false unless page explicitly has whatsapp_number
+        isPageWhatsappConnected = !!page.whatsapp_number;
+      }
+
+      page.is_whatsapp_connected = isPageWhatsappConnected;
       uniquePages.push(page);
       pageIds.add(page.id);
     }

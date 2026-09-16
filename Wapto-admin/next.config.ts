@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: storageRemotePatterns(),
   },
+  async rewrites() {
+    return [
+      { source: "/socket.io/:path*", destination: "http://localhost:5000/socket.io/:path*" },
+    ];
+  },
 };
 
 export default nextConfig;

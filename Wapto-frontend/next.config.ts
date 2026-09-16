@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
       { source: "/refund-policy", destination: "/page/refund-policy" },
       { source: "/privacy-policy", destination: "/page/privacy-policy" },
       { source: "/terms-and-conditions", destination: "/page/terms-and-conditions" },
+      { source: "/socket.io/:path*", destination: "http://localhost:5000/socket.io/:path*" },
     ];
   },
 };

@@ -1,9 +1,11 @@
 import { io, type Socket } from "socket.io-client";
 import { getSession } from "next-auth/react";
 
-export const socket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "", {
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+
+export const socket: Socket = io(SOCKET_URL, {
   autoConnect: false,
-  transports: ["polling", "websocket"],
+  transports: ["websocket", "polling"],
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
@@ -12,7 +14,7 @@ export const socket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "", {
   forceNew: true,
   upgrade: true,
   rememberUpgrade: true,
-  // path: "/socket.io",
+  path: "/socket.io",
   auth: async (cb) => {
     const session = await getSession();
     const token = session?.accessToken;
