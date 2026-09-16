@@ -128,12 +128,14 @@ export const handleFacebookCallback = async (req, res) => {
       console.warn('Could not exchange for long lived token:', e.message);
     }
 
+    let grantedScopes = [];
     try {
       const appToken = `${app_id}|${app_secret}`;
       const debugRes = await axios.get(`https://graph.facebook.com/debug_token`, {
         params: { input_token: accessToken, access_token: appToken }
       });
-      console.log("Granted Scopes:", debugRes.data?.data?.scopes);
+      grantedScopes = debugRes.data?.data?.scopes || [];
+      console.log("Granted Scopes:", grantedScopes);
       console.log("Granular Scopes:", debugRes.data?.data?.granular_scopes);
       console.log("Token Data Access:", debugRes.data?.data?.data_access_expires_at ? new Date(debugRes.data?.data?.data_access_expires_at * 1000) : "N/A");
     } catch (debugErr) {
@@ -152,6 +154,7 @@ export const handleFacebookCallback = async (req, res) => {
         name: fbUser.name,
         email: fbUser.email,
         long_lived_access_token: accessToken,
+        granted_scopes: grantedScopes,
         is_active: true
       },
       { upsert: true, new: true }

@@ -28,6 +28,10 @@ const facebookConnectionSchema = new mongoose.Schema({
   default_page_id: {
     type: String,
     default: null
+  },
+  granted_scopes: {
+    type: [String],
+    default: []
   }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

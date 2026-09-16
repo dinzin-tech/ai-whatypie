@@ -485,12 +485,69 @@ export const syncFacebookAdAccounts = async (req, res) => {
     const { long_lived_access_token: token } = connection;
 
     let allAccounts = [];
-    let url = `${BASE}/me/adaccounts?fields=id,name,account_id,currency,account_status,funding_source_details,is_prepay_account,balance&limit=100&access_token=${token}`;
+    let seenAccountIds = new Set();
 
-    while (url) {
-      const resp = await axios.get(url);
-      allAccounts = [...allAccounts, ...(resp.data.data || [])];
-      url = resp.data.paging?.next || null;
+    // 1. Fetch personal ad accounts
+    try {
+      let url = `${BASE}/me/adaccounts?fields=id,name,account_id,currency,account_status,funding_source_details,is_prepay_account,balance&limit=100&access_token=${token}`;
+      while (url) {
+        const resp = await axios.get(url);
+        const batch = resp.data?.data || [];
+        for (const acc of batch) {
+          if (!seenAccountIds.has(acc.id)) {
+            seenAccountIds.add(acc.id);
+            allAccounts.push(acc);
+          }
+        }
+        url = resp.data.paging?.next || null;
+      }
+    } catch (personalErr) {
+      const errMessage = personalErr?.response?.data?.error?.message || personalErr.message;
+      const errCode = personalErr?.response?.data?.error?.code;
+
+      if (errCode === 200 || (errMessage && errMessage.includes('Missing Permissions'))) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing Facebook Ad Account Permission',
+          details: "Your connected Facebook token is missing the required 'ads_read' or 'ads_management' permission. Please click 'Connect Facebook' to reconnect and grant Ad Account access."
+        });
+      }
+      console.warn('[syncFacebookAdAccounts] Error fetching personal ad accounts:', errMessage);
+    }
+
+    // 2. Fetch business portfolio ad accounts (owned & client ad accounts)
+    try {
+      let bizUrl = `${BASE}/me/businesses?fields=id,name&limit=100&access_token=${token}`;
+      let businesses = [];
+      while (bizUrl) {
+        const bizResp = await axios.get(bizUrl);
+        businesses = [...businesses, ...(bizResp.data?.data || [])];
+        bizUrl = bizResp.data.paging?.next || null;
+      }
+
+      for (const biz of businesses) {
+        const endpoints = [`${BASE}/${biz.id}/owned_ad_accounts`, `${BASE}/${biz.id}/client_ad_accounts`];
+        for (const ep of endpoints) {
+          let accUrl = `${ep}?fields=id,name,account_id,currency,account_status,funding_source_details,is_prepay_account,balance&limit=100&access_token=${token}`;
+          while (accUrl) {
+            try {
+              const accResp = await axios.get(accUrl);
+              const batch = accResp.data?.data || [];
+              for (const acc of batch) {
+                if (!seenAccountIds.has(acc.id)) {
+                  seenAccountIds.add(acc.id);
+                  allAccounts.push(acc);
+                }
+              }
+              accUrl = accResp.data.paging?.next || null;
+            } catch {
+              break;
+            }
+          }
+        }
+      }
+    } catch (bizErr) {
+      console.warn('[syncFacebookAdAccounts] Error fetching business portfolio ad accounts:', bizErr.message);
     }
 
     if (allAccounts.length === 0) {
