@@ -337,12 +337,45 @@ export const syncLinkedSocialAccounts = async (req, res) => {
 
     const connection = await FacebookConnection.findOne({ user_id: userId, is_active: true });
     if (!connection) {
-      return res.status(404).json({ success: false, error: 'No active Facebook connection found' });
+      return res.status(400).json({ success: false, error: 'No active Facebook connection found. Please connect your Facebook account first.' });
     }
 
-    const localPages = await FacebookPage.find({ connection_id: connection._id, is_active: true });
+    let localPages = await FacebookPage.find({ connection_id: connection._id, is_active: true });
+
     if (localPages.length === 0) {
-      return res.status(404).json({ success: false, error: 'No Facebook pages found to sync.' });
+      try {
+        const fetchedPages = await fetchAllFacebookPages(connection.long_lived_access_token, connection.fb_user_id, userId);
+        const validPages = fetchedPages.filter(p => !!p.access_token);
+        if (validPages.length > 0) {
+          await FacebookPage.deleteMany({ connection_id: connection._id });
+          const pageDocs = validPages.map(p => ({
+            user_id: userId,
+            connection_id: connection._id,
+            page_id: p.id,
+            page_name: p.name,
+            page_access_token: p.access_token,
+            category: p.category,
+            picture_url: p.picture?.data?.url,
+            is_meta_verified: p.is_verified || false,
+            business_id: p.business?.id || null,
+            is_whatsapp_connected: !!p.is_whatsapp_connected,
+            is_active: true
+          }));
+          await FacebookPage.insertMany(pageDocs);
+          localPages = await FacebookPage.find({ connection_id: connection._id, is_active: true });
+        }
+      } catch (fetchErr) {
+        console.warn('Failed to auto-fetch pages during linked accounts sync:', fetchErr.message);
+      }
+    }
+
+    if (localPages.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No Facebook pages found on your connected account.',
+        pages_checked: 0,
+        pages_updated: 0
+      });
     }
 
     let updatedPages = 0;
@@ -378,8 +411,8 @@ export const syncLinkedSocialAccounts = async (req, res) => {
         await FacebookPage.findByIdAndUpdate(page._id, {
           is_instagram_connected: hasInstagram,
           instagram_username: instagramUsername,
-          is_whatsapp_connected: globalWhatsappConnected,
-          business_id: businessId
+          is_whatsapp_connected: globalWhatsappConnected || page.is_whatsapp_connected,
+          business_id: businessId || page.business_id
         });
 
         updatedPages++;
