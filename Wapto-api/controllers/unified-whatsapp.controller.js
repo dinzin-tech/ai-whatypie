@@ -1649,15 +1649,33 @@ export const getEmbbededSignupConnection = async (req, res) => {
   try {
     const metaSettings = await Setting.findOne().lean();
 
-    if (!metaSettings?.app_id || !metaSettings?.app_secret) {
-      return res.status(500).json({
-        success: false,
-        message: 'Meta app configuration not found',
-        error: 'Meta app configuration not found'
-      });
+    let APP_ID = metaSettings?.app_id || process.env.FACEBOOK_APP_ID || process.env.META_APP_ID || process.env.APP_ID || process.env.app_id || null;
+    let APP_SECRET = metaSettings?.app_secret || process.env.FACEBOOK_APP_SECRET || process.env.META_APP_SECRET || process.env.APP_SECRET || process.env.app_secret || null;
+
+    if (APP_ID) APP_ID = String(APP_ID).trim();
+    if (APP_SECRET) APP_SECRET = String(APP_SECRET).trim();
+
+    if (APP_ID && !/^\d+$/.test(APP_ID)) {
+      const envAppId = (process.env.FACEBOOK_APP_ID || process.env.META_APP_ID || '').trim();
+      if (envAppId && /^\d+$/.test(envAppId)) {
+        APP_ID = envAppId;
+      }
     }
 
-    const { app_id: APP_ID, app_secret: APP_SECRET } = metaSettings;
+    if (!APP_ID || !APP_SECRET) {
+      console.error('[EMBEDDED_SIGNUP] Configuration Error: Meta App ID or App Secret missing.', {
+        hasAppId: !!APP_ID,
+        appIdLength: APP_ID ? APP_ID.length : 0,
+        isAppIdNumeric: APP_ID ? /^\d+$/.test(APP_ID) : false,
+        hasAppSecret: !!APP_SECRET,
+        appSecretLength: APP_SECRET ? APP_SECRET.length : 0
+      });
+      return res.status(500).json({
+        success: false,
+        message: 'Meta App Configuration Error: App ID or App Secret is missing in system settings or environment variables.',
+        error: 'Meta App Configuration Error: App ID or App Secret is missing in system settings or environment variables.'
+      });
+    }
 
     let accessToken;
     try {

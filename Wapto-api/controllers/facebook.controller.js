@@ -110,14 +110,25 @@ export const handleFacebookCallback = async (req, res) => {
     }
 
     const metaSettings = await Setting.findOne().lean();
-    if (!metaSettings?.app_id || !metaSettings?.app_secret) {
-      return res.status(500).json({
-        success: false,
-        error: 'Meta app configuration not found. Please update App ID and App Secret in Settings.'
-      });
+    let app_id = metaSettings?.app_id || process.env.FACEBOOK_APP_ID || process.env.META_APP_ID || process.env.APP_ID || process.env.app_id || null;
+    let app_secret = metaSettings?.app_secret || process.env.FACEBOOK_APP_SECRET || process.env.META_APP_SECRET || process.env.APP_SECRET || process.env.app_secret || null;
+
+    if (app_id) app_id = String(app_id).trim();
+    if (app_secret) app_secret = String(app_secret).trim();
+
+    if (app_id && !/^\d+$/.test(app_id)) {
+      const envAppId = (process.env.FACEBOOK_APP_ID || process.env.META_APP_ID || '').trim();
+      if (envAppId && /^\d+$/.test(envAppId)) {
+        app_id = envAppId;
+      }
     }
 
-    const { app_id, app_secret } = metaSettings;
+    if (!app_id || !app_secret) {
+      return res.status(500).json({
+        success: false,
+        error: 'Meta app configuration not found. Please update App ID and App Secret in Settings or environment variables.'
+      });
+    }
 
     let accessToken = access_token;
     try {
