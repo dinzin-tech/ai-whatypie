@@ -1,3 +1,4 @@
+import axios from 'axios';
 import unifiedWhatsAppService, { PROVIDER_TYPES } from '../services/whatsapp/unified-whatsapp.service.js';
 import { Message, ContactTag, ChatNote, WhatsappWaba, WhatsappPhoneNumber, Contact, Tag, ChatAssignment, User, WabaConfiguration, Workspace, FacebookConnection } from '../models/index.js';
 import { uploadSingle } from '../utils/upload.js';
@@ -1891,7 +1892,7 @@ export const getEmbbededSignupConnection = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Embedded signup failed:', err.response?.data || err.message);
+    console.error('Embedded signup failed:', err?.response?.data?.error?.message || err.message);
 
     const errorData = err.response?.data?.error || {};
     const errorMessage = errorData.message || 'Embedded signup failed';

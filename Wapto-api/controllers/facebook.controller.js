@@ -17,7 +17,7 @@ const fetchAllFacebookPages = async (accessToken, fbUserId, userId) => {
       allPages = [...allPages, ...batch];
       pagesUrl = response.data.paging?.next || null;
     } catch (error) {
-      console.error('Error fetching personal pages:', error?.response?.data || error.message);
+      console.error('Error fetching personal pages:', error?.response?.data?.error?.message || error.message);
       break;
     }
   }
@@ -30,7 +30,7 @@ const fetchAllFacebookPages = async (accessToken, fbUserId, userId) => {
       businesses = [...businesses, ...(resp.data.data || [])];
       businessesUrl = resp.data.paging?.next || null;
     } catch (error) {
-      console.error('Error fetching businesses:', error?.response?.data || error.message);
+      console.error('Error fetching businesses:', error?.response?.data?.error?.message || error.message);
       break;
     }
   }
