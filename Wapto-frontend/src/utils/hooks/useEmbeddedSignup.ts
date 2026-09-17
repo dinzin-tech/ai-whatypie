@@ -42,8 +42,6 @@ export const useEmbeddedSignup = (onFinish: (code: string, data: any) => void) =
       (res: any) => {
         if (res.authResponse?.code) {
           setAuthCode(res.authResponse.code);
-        } else if (res.authResponse?.accessToken) {
-          setAuthCode(res.authResponse.accessToken);
         }
       },
       {

@@ -1661,16 +1661,11 @@ export const getEmbbededSignupConnection = async (req, res) => {
         accessToken = tokenRes.data?.access_token;
       } catch (tokenErr) {
         console.error('Failed to exchange code for access_token:', tokenErr?.response?.data || tokenErr.message);
-        const fbConn = await FacebookConnection.findOne({ user_id: userId, is_active: true }).lean();
-        if (fbConn?.long_lived_access_token) {
-          accessToken = fbConn.long_lived_access_token;
-        } else {
-          return res.status(400).json({
-            success: false,
-            error: 'Failed to exchange authorization code with Meta Graph API',
-            details: tokenErr?.response?.data?.error?.message || tokenErr.message
-          });
-        }
+        return res.status(400).json({
+          success: false,
+          error: 'Failed to exchange authorization code with Meta Graph API',
+          details: tokenErr?.response?.data?.error?.message || tokenErr.message
+        });
       }
     }
 

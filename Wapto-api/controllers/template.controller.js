@@ -373,10 +373,11 @@ export const createTemplate = async (req, res) => {
       template_id: createdTemplate._id,
     });
   } catch (error) {
-    console.error("Error creating template:", error);
+    console.error("Error creating template:", error?.response?.data || error.message);
+    const metaErrorMsg = error.response?.data?.error?.error_user_msg || error.response?.data?.error?.message || error.message;
     return res.status(400).json({
-      message: error.response?.data.error.error_user_msg || error.message,
-      error: error.response?.data.error.error_user_msg || error.message,
+      message: metaErrorMsg,
+      error: metaErrorMsg,
     });
   }
 };
@@ -940,11 +941,12 @@ export const getTemplatesFromMeta = async (req, res) => {
       count: metaTemplates.length,
     });
   } catch (error) {
-    console.error("Error fetching templates from Meta:", error);
+    console.error("Error fetching templates from Meta:", error?.response?.data || error.message);
+    const metaErrorMsg = error.response?.data?.error?.message || error.message;
     return res.status(500).json({
       success: false,
       error: "Failed to fetch templates from Meta",
-      details: error.message,
+      details: metaErrorMsg,
     });
   }
 };
