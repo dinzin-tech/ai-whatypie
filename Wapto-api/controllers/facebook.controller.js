@@ -120,7 +120,6 @@ export const handleFacebookCallback = async (req, res) => {
     const { app_id, app_secret } = metaSettings;
 
     let accessToken = access_token;
-    console.log("accessToken", accessToken);
     try {
       const longLivedTokenRes = await axios.get(`https://graph.facebook.com/${FB_API_VERSION}/oauth/access_token`, {
         params: {

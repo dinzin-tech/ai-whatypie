@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppSelector } from "@/src/redux/hooks";
 import { useFacebookReady } from "@/src/app/FacebookSDKProvider";
 
 export const useEmbeddedSignup = (onFinish: (code: string, data: any) => void) => {
   const [authCode, setAuthCode] = useState<string | null>(null);
   const [signupData, setSignupData] = useState<any>(null);
+  const hasFinishedRef = useRef<boolean>(false);
   const fbReady = useFacebookReady();
   const { setting } = useAppSelector((state) => state.setting);
 
@@ -16,9 +17,11 @@ export const useEmbeddedSignup = (onFinish: (code: string, data: any) => void) =
       try {
         const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
 
-        if (payload.type === "WA_EMBEDDED_SIGNUP" && (payload.event === "FINISH" || payload.event === "RESPONSE")) {
+        if (payload.type === "WA_EMBEDDED_SIGNUP") {
           const data = payload.data || payload;
-          setSignupData(data);
+          if (payload.event === "FINISH" || data?.waba_id || data?.phone_number_id) {
+            setSignupData(data);
+          }
         }
       } catch {}
     };
@@ -28,7 +31,8 @@ export const useEmbeddedSignup = (onFinish: (code: string, data: any) => void) =
   }, []);
 
   useEffect(() => {
-    if (authCode && signupData) {
+    if (authCode && signupData && !hasFinishedRef.current) {
+      hasFinishedRef.current = true;
       onFinish(authCode, signupData);
       setAuthCode(null);
       setSignupData(null);
@@ -37,6 +41,7 @@ export const useEmbeddedSignup = (onFinish: (code: string, data: any) => void) =
 
   const startSignup = useCallback(() => {
     if (!fbReady || !window.FB) return;
+    hasFinishedRef.current = false;
 
     window.FB.login(
       (res: any) => {

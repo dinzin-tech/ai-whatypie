@@ -1607,31 +1607,43 @@ export const getEmbbededSignupConnection = async (req, res) => {
   const wabaId = signupData?.waba_id || req.body?.waba_id || req.body?.whatsapp_business_account_id;
   const phoneNumberId = signupData?.phone_number_id || req.body?.phone_number_id;
 
-  if (!code && !req.body?.access_token) {
+  console.log('[EMBEDDED_SIGNUP] Request received:', {
+    userId,
+    hasCode: !!code,
+    codeLength: code?.length || 0,
+    hasSignupData: !!signupData,
+    wabaId,
+    phoneNumberId,
+    businessId: signupData?.business_id,
+    workspaceId: workspace_id
+  });
+
+  if (!code) {
     return res.status(400).json({
       success: false,
-      error: 'Authorization code or access_token is required'
+      message: 'Authorization code is required for Embedded Signup',
+      error: 'Authorization code is required for Embedded Signup'
     });
   }
 
   if (!wabaId || !phoneNumberId) {
     return res.status(400).json({
       success: false,
+      message: 'Invalid signup payload: waba_id and phone_number_id are required',
       error: 'Invalid signup payload: waba_id and phone_number_id are required'
     });
   }
 
-  if (code && processedAuthCodes.has(code)) {
+  if (processedAuthCodes.has(code)) {
     return res.status(400).json({
       success: false,
+      message: 'This authorization code has already been processed or is currently being processed.',
       error: 'This authorization code has already been processed or is currently being processed.'
     });
   }
 
-  if (code) {
-    processedAuthCodes.add(code);
-    setTimeout(() => processedAuthCodes.delete(code), 5 * 60 * 1000);
-  }
+  processedAuthCodes.add(code);
+  setTimeout(() => processedAuthCodes.delete(code), 5 * 60 * 1000);
 
   try {
     const metaSettings = await Setting.findOne().lean();
@@ -1639,82 +1651,126 @@ export const getEmbbededSignupConnection = async (req, res) => {
     if (!metaSettings?.app_id || !metaSettings?.app_secret) {
       return res.status(500).json({
         success: false,
+        message: 'Meta app configuration not found',
         error: 'Meta app configuration not found'
       });
     }
 
     const { app_id: APP_ID, app_secret: APP_SECRET } = metaSettings;
 
-    let accessToken = req.body?.access_token;
-    if (!accessToken && code) {
-      try {
-        const tokenRes = await axios.get(
-          'https://graph.facebook.com/v22.0/oauth/access_token',
-          {
-            params: {
-              client_id: APP_ID,
-              client_secret: APP_SECRET,
-              code
-            }
+    let accessToken;
+    try {
+      const tokenRes = await axios.get(
+        'https://graph.facebook.com/v22.0/oauth/access_token',
+        {
+          params: {
+            client_id: APP_ID,
+            client_secret: APP_SECRET,
+            code
           }
-        );
-        accessToken = tokenRes.data?.access_token;
-      } catch (tokenErr) {
-        console.error('Failed to exchange code for access_token:', tokenErr?.response?.data || tokenErr.message);
-        return res.status(400).json({
-          success: false,
-          error: 'Failed to exchange authorization code with Meta Graph API',
-          details: tokenErr?.response?.data?.error?.message || tokenErr.message
-        });
-      }
+        }
+      );
+      accessToken = tokenRes.data?.access_token;
+    } catch (tokenErr) {
+      const metaErr = tokenErr?.response?.data?.error || {};
+      console.error('[EMBEDDED_SIGNUP] Meta OAuth Exchange Failed:', {
+        status: tokenErr?.response?.status,
+        message: metaErr.message || tokenErr.message,
+        type: metaErr.type,
+        code: metaErr.code,
+        error_subcode: metaErr.error_subcode,
+        fbtrace_id: metaErr.fbtrace_id
+      });
+      return res.status(400).json({
+        success: false,
+        message: metaErr.message || 'Meta OAuth exchange failed',
+        error: metaErr.message || 'Meta OAuth exchange failed',
+        meta_error: metaErr.message || tokenErr.message,
+        meta_type: metaErr.type || 'OAuthException',
+        meta_code: metaErr.code,
+        meta_subcode: metaErr.error_subcode,
+        fbtrace_id: metaErr.fbtrace_id
+      });
     }
 
     let display_phone_number = signupData?.display_phone_number || req.body?.display_phone_number;
     let verified_name = signupData?.verified_name || req.body?.verified_name;
     let quality_rating = signupData?.quality_rating || 'GREEN';
 
-    if (accessToken) {
-      try {
-        const phoneRes = await axios.get(
-          `https://graph.facebook.com/v22.0/${phoneNumberId}`,
-          {
-            params: {
-              fields: 'display_phone_number,verified_name,quality_rating'
-            },
-            headers: {
-              Authorization: `Bearer ${accessToken}`
-            }
+    try {
+      const phoneRes = await axios.get(
+        `https://graph.facebook.com/v22.0/${phoneNumberId}`,
+        {
+          params: {
+            fields: 'display_phone_number,verified_name,quality_rating'
+          },
+          headers: {
+            Authorization: `Bearer ${accessToken}`
           }
-        );
-        if (phoneRes.data) {
-          display_phone_number = phoneRes.data.display_phone_number || display_phone_number;
-          verified_name = phoneRes.data.verified_name || verified_name;
-          quality_rating = phoneRes.data.quality_rating || quality_rating;
         }
-      } catch (phoneErr) {
-        console.warn('Could not fetch phone number details from Meta Graph API:', phoneErr?.response?.data?.error?.message || phoneErr.message);
+      );
+      if (phoneRes.data) {
+        display_phone_number = phoneRes.data.display_phone_number || display_phone_number;
+        verified_name = phoneRes.data.verified_name || verified_name;
+        quality_rating = phoneRes.data.quality_rating || quality_rating;
       }
+    } catch (phoneErr) {
+      const metaErr = phoneErr?.response?.data?.error || {};
+      console.error('[EMBEDDED_SIGNUP] Phone Validation Failed:', {
+        status: phoneErr?.response?.status,
+        message: metaErr.message || phoneErr.message,
+        type: metaErr.type,
+        code: metaErr.code,
+        error_subcode: metaErr.error_subcode,
+        fbtrace_id: metaErr.fbtrace_id
+      });
+      return res.status(400).json({
+        success: false,
+        message: metaErr.message || 'Phone number validation failed with Meta Graph API',
+        error: metaErr.message || 'Phone number validation failed',
+        meta_error: metaErr.message || phoneErr.message,
+        meta_type: metaErr.type || 'OAuthException',
+        meta_code: metaErr.code,
+        meta_subcode: metaErr.error_subcode,
+        fbtrace_id: metaErr.fbtrace_id
+      });
     }
 
     let businessId = signupData?.business_id || req.body?.business_id || null;
     let wabaName = verified_name || display_phone_number || `WABA ${wabaId}`;
 
-    if (accessToken) {
-      try {
-        const wabaRes = await axios.get(
-          `https://graph.facebook.com/v22.0/${wabaId}`,
-          {
-            params: { fields: 'id,name,business' },
-            headers: { Authorization: `Bearer ${accessToken}` }
-          }
-        );
-        if (wabaRes.data) {
-          if (wabaRes.data.name) wabaName = wabaRes.data.name;
-          if (wabaRes.data.business?.id) businessId = wabaRes.data.business.id;
+    try {
+      const wabaRes = await axios.get(
+        `https://graph.facebook.com/v22.0/${wabaId}`,
+        {
+          params: { fields: 'id,name,business' },
+          headers: { Authorization: `Bearer ${accessToken}` }
         }
-      } catch (wabaErr) {
-        console.warn('Could not fetch WABA details from Meta Graph API:', wabaErr?.response?.data?.error?.message || wabaErr.message);
+      );
+      if (wabaRes.data) {
+        if (wabaRes.data.name) wabaName = wabaRes.data.name;
+        if (wabaRes.data.business?.id) businessId = wabaRes.data.business.id;
       }
+    } catch (wabaErr) {
+      const metaErr = wabaErr?.response?.data?.error || {};
+      console.error('[EMBEDDED_SIGNUP] WABA Validation Failed:', {
+        status: wabaErr?.response?.status,
+        message: metaErr.message || wabaErr.message,
+        type: metaErr.type,
+        code: metaErr.code,
+        error_subcode: metaErr.error_subcode,
+        fbtrace_id: metaErr.fbtrace_id
+      });
+      return res.status(400).json({
+        success: false,
+        message: metaErr.message || 'WABA validation failed with Meta Graph API',
+        error: metaErr.message || 'WABA validation failed',
+        meta_error: metaErr.message || wabaErr.message,
+        meta_type: metaErr.type || 'OAuthException',
+        meta_code: metaErr.code,
+        meta_subcode: metaErr.error_subcode,
+        fbtrace_id: metaErr.fbtrace_id
+      });
     }
 
     if (!display_phone_number) {

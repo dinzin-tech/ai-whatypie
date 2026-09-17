@@ -22,7 +22,16 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
 
     if (!response.ok) {
-      return NextResponse.json({ message: data.message || "connection failed" }, { status: response.status });
+      const errorMessage = data.message || data.error || data.details || "Embedded signup connection failed";
+      return NextResponse.json(
+        {
+          success: false,
+          message: errorMessage,
+          error: errorMessage,
+          ...data,
+        },
+        { status: response.status }
+      );
     }
 
     return NextResponse.json(data, { status: 200 });
