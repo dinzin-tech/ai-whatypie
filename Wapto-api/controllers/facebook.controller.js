@@ -110,17 +110,39 @@ export const handleFacebookCallback = async (req, res) => {
     }
 
     const metaSettings = await Setting.findOne().lean();
-    let app_id = metaSettings?.app_id || process.env.FACEBOOK_APP_ID || process.env.META_APP_ID || process.env.APP_ID || process.env.app_id || null;
-    let app_secret = metaSettings?.app_secret || process.env.FACEBOOK_APP_SECRET || process.env.META_APP_SECRET || process.env.APP_SECRET || process.env.app_secret || null;
 
-    if (app_id) app_id = String(app_id).trim();
-    if (app_secret) app_secret = String(app_secret).trim();
+    const dbAppId = metaSettings?.app_id ? String(metaSettings.app_id).trim() : null;
+    const dbAppSecret = metaSettings?.app_secret ? String(metaSettings.app_secret).trim() : null;
 
-    if (app_id && !/^\d+$/.test(app_id)) {
-      const envAppId = (process.env.FACEBOOK_APP_ID || process.env.META_APP_ID || '').trim();
-      if (envAppId && /^\d+$/.test(envAppId)) {
-        app_id = envAppId;
+    const envAppId = (process.env.FACEBOOK_APP_ID || process.env.META_APP_ID || process.env.APP_ID || process.env.app_id || '').trim() || null;
+    const envAppSecret = (process.env.FACEBOOK_APP_SECRET || process.env.META_APP_SECRET || process.env.APP_SECRET || process.env.app_secret || '').trim() || null;
+
+    const dbPairValid = Boolean(dbAppId && /^\d+$/.test(dbAppId) && dbAppSecret);
+    const envPairValid = Boolean(envAppId && /^\d+$/.test(envAppId) && envAppSecret);
+
+    const dbAppIdEqualsEnvAppId = (dbAppId === envAppId);
+    const dbSecretEqualsEnvSecret = (dbAppSecret === envAppSecret);
+
+    let app_id = null;
+    let app_secret = null;
+
+    if (dbPairValid && envPairValid) {
+      if (dbAppIdEqualsEnvAppId && dbSecretEqualsEnvSecret) {
+        app_id = dbAppId;
+        app_secret = dbAppSecret;
+      } else {
+        console.error('[FB_CALLBACK] SECURITY FAIL-CLOSED: Database and Environment Meta credentials conflict!');
+        return res.status(500).json({
+          success: false,
+          error: 'Meta App credentials conflict between database settings and environment configuration. Synchronize the App ID and App Secret before continuing.'
+        });
       }
+    } else if (dbPairValid) {
+      app_id = dbAppId;
+      app_secret = dbAppSecret;
+    } else if (envPairValid) {
+      app_id = envAppId;
+      app_secret = envAppSecret;
     }
 
     if (!app_id || !app_secret) {

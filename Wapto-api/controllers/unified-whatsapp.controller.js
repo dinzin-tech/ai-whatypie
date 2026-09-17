@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import axios from 'axios';
 import unifiedWhatsAppService, { PROVIDER_TYPES } from '../services/whatsapp/unified-whatsapp.service.js';
 import { Message, ContactTag, ChatNote, WhatsappWaba, WhatsappPhoneNumber, Contact, Tag, ChatAssignment, User, WabaConfiguration, Workspace, FacebookConnection } from '../models/index.js';
@@ -1649,33 +1650,88 @@ export const getEmbbededSignupConnection = async (req, res) => {
   try {
     const metaSettings = await Setting.findOne().lean();
 
-    let APP_ID = metaSettings?.app_id || process.env.FACEBOOK_APP_ID || process.env.META_APP_ID || process.env.APP_ID || process.env.app_id || null;
-    let APP_SECRET = metaSettings?.app_secret || process.env.FACEBOOK_APP_SECRET || process.env.META_APP_SECRET || process.env.APP_SECRET || process.env.app_secret || null;
+    const dbAppId = metaSettings?.app_id ? String(metaSettings.app_id).trim() : null;
+    const dbAppSecret = metaSettings?.app_secret ? String(metaSettings.app_secret).trim() : null;
 
-    if (APP_ID) APP_ID = String(APP_ID).trim();
-    if (APP_SECRET) APP_SECRET = String(APP_SECRET).trim();
+    const envAppId = (process.env.FACEBOOK_APP_ID || process.env.META_APP_ID || process.env.APP_ID || process.env.app_id || '').trim() || null;
+    const envAppSecret = (process.env.FACEBOOK_APP_SECRET || process.env.META_APP_SECRET || process.env.APP_SECRET || process.env.app_secret || '').trim() || null;
 
-    if (APP_ID && !/^\d+$/.test(APP_ID)) {
-      const envAppId = (process.env.FACEBOOK_APP_ID || process.env.META_APP_ID || '').trim();
-      if (envAppId && /^\d+$/.test(envAppId)) {
-        APP_ID = envAppId;
+    const dbPairValid = Boolean(dbAppId && /^\d+$/.test(dbAppId) && dbAppSecret);
+    const envPairValid = Boolean(envAppId && /^\d+$/.test(envAppId) && envAppSecret);
+
+    const hashSecret = (val) => val ? crypto.createHash('sha256').update(String(val).trim()).digest('hex').substring(0, 8) : 'none';
+
+    const dbAppIdFingerprint = hashSecret(dbAppId);
+    const dbAppSecretFingerprint = hashSecret(dbAppSecret);
+    const envAppIdFingerprint = hashSecret(envAppId);
+    const envAppSecretFingerprint = hashSecret(envAppSecret);
+
+    const dbAppIdEqualsEnvAppId = (dbAppId === envAppId);
+    const dbSecretEqualsEnvSecret = (dbAppSecret === envAppSecret);
+
+    let APP_ID = null;
+    let APP_SECRET = null;
+    let selectedSource = 'none';
+
+    if (dbPairValid && envPairValid) {
+      if (dbAppIdEqualsEnvAppId && dbSecretEqualsEnvSecret) {
+        APP_ID = dbAppId;
+        APP_SECRET = dbAppSecret;
+        selectedSource = 'database_and_environment_match';
+      } else {
+        selectedSource = 'credential_pair_conflict';
+        console.error('[EMBEDDED_SIGNUP] SECURITY FAIL-CLOSED: Database and Environment Meta credentials conflict!', {
+          dbAppIdFingerprint,
+          dbAppSecretFingerprint,
+          envAppIdFingerprint,
+          envAppSecretFingerprint,
+          dbAppIdEqualsEnvAppId,
+          dbSecretEqualsEnvSecret,
+          selectedSource
+        });
+        return res.status(500).json({
+          success: false,
+          message: 'Meta App credentials conflict between database settings and environment configuration. Synchronize the App ID and App Secret before continuing.',
+          error: 'Meta App credentials conflict between database settings and environment configuration. Synchronize the App ID and App Secret before continuing.'
+        });
       }
-    }
-
-    if (!APP_ID || !APP_SECRET) {
-      console.error('[EMBEDDED_SIGNUP] Configuration Error: Meta App ID or App Secret missing.', {
-        hasAppId: !!APP_ID,
-        appIdLength: APP_ID ? APP_ID.length : 0,
-        isAppIdNumeric: APP_ID ? /^\d+$/.test(APP_ID) : false,
-        hasAppSecret: !!APP_SECRET,
-        appSecretLength: APP_SECRET ? APP_SECRET.length : 0
+    } else if (dbPairValid) {
+      APP_ID = dbAppId;
+      APP_SECRET = dbAppSecret;
+      selectedSource = 'database_pair';
+    } else if (envPairValid) {
+      APP_ID = envAppId;
+      APP_SECRET = envAppSecret;
+      selectedSource = 'environment_pair';
+    } else {
+      selectedSource = 'no_valid_credential_pair';
+      console.error('[EMBEDDED_SIGNUP] Configuration Error: No valid complete Meta App ID + App Secret pair found in Database or Environment.', {
+        dbPairValid,
+        envPairValid,
+        dbAppIdFingerprint,
+        dbAppSecretFingerprint,
+        envAppIdFingerprint,
+        envAppSecretFingerprint,
+        dbAppIdEqualsEnvAppId,
+        dbSecretEqualsEnvSecret,
+        selectedSource
       });
       return res.status(500).json({
         success: false,
-        message: 'Meta App Configuration Error: App ID or App Secret is missing in system settings or environment variables.',
-        error: 'Meta App Configuration Error: App ID or App Secret is missing in system settings or environment variables.'
+        message: 'Meta App Configuration Error: No complete Meta App ID and App Secret pair found in database settings or environment variables.',
+        error: 'Meta App Configuration Error: No complete Meta App ID and App Secret pair found in database settings or environment variables.'
       });
     }
+
+    console.log('[EMBEDDED_SIGNUP] Safe credential diagnostic:', {
+      dbAppIdFingerprint,
+      dbAppSecretFingerprint,
+      envAppIdFingerprint,
+      envAppSecretFingerprint,
+      dbAppIdEqualsEnvAppId,
+      dbSecretEqualsEnvSecret,
+      selectedSource
+    });
 
     let accessToken;
     try {
