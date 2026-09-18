@@ -1937,9 +1937,10 @@ export const getEmbbededSignupConnection = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    let wabaConfig = await WabaConfiguration.findOne({ waba_id: wabaId });
+    let wabaConfig = await WabaConfiguration.findOne({ waba_id: waba._id });
+
     if (!wabaConfig) {
-      await WabaConfiguration.create({ waba_id: wabaId });
+      await WabaConfiguration.create({ waba_id: waba._id });
     }
 
     if (workspace_id) {

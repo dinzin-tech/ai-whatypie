@@ -1,5 +1,19 @@
-import { WabaConfiguration, ReplyMaterial, Template, EcommerceCatalog, Chatbot, Sequence } from '../models/index.js';
+import mongoose from 'mongoose';
+import { WhatsappWaba, WabaConfiguration, ReplyMaterial, Template, EcommerceCatalog, Chatbot, Sequence } from '../models/index.js';
 
+const resolveMongoWabaId = async (paramId) => {
+    if (!paramId) return null;
+    const cleanId = String(paramId).trim();
+    if (mongoose.isValidObjectId(cleanId)) {
+        const waba = await WhatsappWaba.findById(cleanId).lean();
+        if (waba) return waba._id;
+    }
+    const wabaByMetaId = await WhatsappWaba.findOne({
+        whatsapp_business_account_id: cleanId,
+        deleted_at: null
+    }).lean();
+    return wabaByMetaId ? wabaByMetaId._id : null;
+};
 
 export const getWabaConfiguration = async (req, res) => {
     try {
@@ -9,10 +23,15 @@ export const getWabaConfiguration = async (req, res) => {
             return res.status(400).json({ success: false, message: 'waba_id is required' });
         }
 
-        let config = await WabaConfiguration.findOne({ waba_id });
+        const mongoWabaId = await resolveMongoWabaId(waba_id);
+        if (!mongoWabaId) {
+            return res.status(404).json({ success: false, message: 'WABA account not found' });
+        }
+
+        let config = await WabaConfiguration.findOne({ waba_id: mongoWabaId });
 
         if (!config) {
-            config = await WabaConfiguration.create({ waba_id });
+            config = await WabaConfiguration.create({ waba_id: mongoWabaId });
         }
 
         return res.status(200).json({
@@ -34,9 +53,14 @@ export const updateWabaConfiguration = async (req, res) => {
             return res.status(400).json({ success: false, message: 'waba_id is required' });
         }
 
-        let config = await WabaConfiguration.findOne({ waba_id });
+        const mongoWabaId = await resolveMongoWabaId(waba_id);
+        if (!mongoWabaId) {
+            return res.status(404).json({ success: false, message: 'WABA account not found' });
+        }
+
+        let config = await WabaConfiguration.findOne({ waba_id: mongoWabaId });
         if (!config) {
-            config = new WabaConfiguration({ waba_id });
+            config = new WabaConfiguration({ waba_id: mongoWabaId });
         }
 
         const fieldsToValidate = [
@@ -53,12 +77,12 @@ export const updateWabaConfiguration = async (req, res) => {
                 const materialType = updateData[field].type;
 
                 let material;
-                const materialQuery = { _id: materialId, waba_id, deleted_at: null };
+                const materialQuery = { _id: materialId, waba_id: mongoWabaId, deleted_at: null };
 
                 if (materialType === 'ReplyMaterial') {
                     material = await ReplyMaterial.findOne(materialQuery);
                 } else if (materialType === 'Template') {
-                    material = await Template.findOne({ _id: materialId, waba_id, status: 'approved' });
+                    material = await Template.findOne({ _id: materialId, waba_id: mongoWabaId, status: 'approved' });
                 } else if (materialType === 'EcommerceCatalog') {
                     material = await EcommerceCatalog.findOne(materialQuery);
                 } else if (materialType === 'chatbot') {
