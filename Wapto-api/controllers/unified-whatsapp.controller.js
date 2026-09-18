@@ -6,6 +6,7 @@ import { uploadSingle } from '../utils/upload.js';
 import { Setting, WhatsappConnection } from '../models/index.js';
 import { assignChatToAgent as assignChatToAgentFromChat } from './chat.controller.js';
 import paymentLinkService from '../services/payment-link.service.js';
+import { subscribeWabaToWebhooks } from '../services/whatsapp/waba-subscription.service.js';
 import mongoose from 'mongoose';
 
 const processedAuthCodes = new Set();
@@ -1951,6 +1952,46 @@ export const getEmbbededSignupConnection = async (req, res) => {
       });
     }
 
+    // Subscribe WABA to Meta App Webhooks using the WABA access token
+    const subscriptionResult = await subscribeWabaToWebhooks({
+      wabaMetaId: waba.whatsapp_business_account_id,
+      accessToken: waba.access_token
+    });
+
+    if (subscriptionResult.success) {
+      waba.webhook_subscription_status = 'subscribed';
+      waba.webhook_subscribed_at = new Date();
+      waba.webhook_subscription_error = null;
+      await waba.save();
+    } else {
+      waba.webhook_subscription_status = 'failed';
+      waba.webhook_subscription_error = subscriptionResult.error;
+      await waba.save();
+
+      console.warn('[EMBEDDED_SIGNUP] Webhook subscription failed for WABA:', {
+        wabaMetaId: waba.whatsapp_business_account_id,
+        error: subscriptionResult.error
+      });
+
+      return res.status(200).json({
+        success: true,
+        warning: 'WhatsApp account connected successfully, but webhook subscription failed. Incoming messages may not be received until webhooks are subscribed.',
+        webhook_subscription_failed: true,
+        webhook_error: subscriptionResult.error,
+        data: {
+          waba_id: waba._id,
+          waba_name: waba.name,
+          whatsapp_business_account_id: waba.whatsapp_business_account_id,
+          phone_id: phoneNumber._id,
+          phone_number_id: phoneNumber.phone_number_id,
+          display_phone_number: phoneNumber.display_phone_number,
+          verified_name: phoneNumber.verified_name,
+          quality_rating: phoneNumber.quality_rating,
+          webhook_subscription_status: 'failed'
+        }
+      });
+    }
+
     return res.json({
       success: true,
       data: {
@@ -1962,6 +2003,7 @@ export const getEmbbededSignupConnection = async (req, res) => {
         display_phone_number: phoneNumber.display_phone_number,
         verified_name: phoneNumber.verified_name,
         quality_rating: phoneNumber.quality_rating,
+        webhook_subscription_status: 'subscribed',
         is_new_waba: !waba,
         is_new_phone: !phoneNumber
       }
@@ -2754,6 +2796,84 @@ export const getWabaList = async (req, res) => {
   }
 };
 
+export const subscribeWabaWebhooks = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'WABA identifier (:id) is required' });
+    }
+
+    const cleanId = String(id).trim();
+
+    let waba = null;
+    if (mongoose.isValidObjectId(cleanId)) {
+      waba = await WhatsappWaba.findOne({ _id: cleanId, deleted_at: null });
+    }
+    if (!waba) {
+      waba = await WhatsappWaba.findOne({ whatsapp_business_account_id: cleanId, deleted_at: null });
+    }
+
+    if (!waba) {
+      return res.status(404).json({ success: false, message: `WhatsApp WABA account not found for ID: ${cleanId}` });
+    }
+
+    if (!waba.whatsapp_business_account_id) {
+      return res.status(400).json({ success: false, message: 'WABA does not contain a valid Meta whatsapp_business_account_id' });
+    }
+
+    if (!waba.access_token) {
+      return res.status(400).json({ success: false, message: 'WABA does not contain an access_token. Re-connect via Embedded Signup.' });
+    }
+
+    const subscriptionResult = await subscribeWabaToWebhooks({
+      wabaMetaId: waba.whatsapp_business_account_id,
+      accessToken: waba.access_token
+    });
+
+    if (subscriptionResult.success) {
+      waba.webhook_subscription_status = 'subscribed';
+      waba.webhook_subscribed_at = new Date();
+      waba.webhook_subscription_error = null;
+      await waba.save();
+
+      return res.json({
+        success: true,
+        message: `Successfully subscribed WABA ${waba.whatsapp_business_account_id} to WhatsApp webhooks`,
+        data: {
+          waba_id: waba._id,
+          whatsapp_business_account_id: waba.whatsapp_business_account_id,
+          webhook_subscription_status: waba.webhook_subscription_status,
+          subscribed_at: waba.webhook_subscribed_at
+        }
+      });
+    } else {
+      waba.webhook_subscription_status = 'failed';
+      waba.webhook_subscription_error = subscriptionResult.error;
+      await waba.save();
+
+      return res.status(subscriptionResult.status || 500).json({
+        success: false,
+        message: `Failed to subscribe WABA to webhooks: ${subscriptionResult.error}`,
+        error: subscriptionResult.error,
+        meta_error: subscriptionResult.metaError || null,
+        data: {
+          waba_id: waba._id,
+          whatsapp_business_account_id: waba.whatsapp_business_account_id,
+          webhook_subscription_status: 'failed'
+        }
+      });
+    }
+  } catch (error) {
+    console.error('[WABA_SUBSCRIPTION] Error in subscribeWabaWebhooks controller:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to execute WABA webhook subscription',
+      error: error.message
+    });
+  }
+};
+
 export default {
   sendMessage,
   getContactProfile,
@@ -2772,5 +2892,6 @@ export default {
   getWabaPhoneNumbers,
   getEmbbededSignupConnection,
   disconnectWhatsApp,
-  getWabaList
+  getWabaList,
+  subscribeWabaWebhooks
 };

@@ -67,6 +67,19 @@ const whatsappWabaSchema = new mongoose.Schema({
     sparse: true
   },
 
+  webhook_subscription_status: {
+    type: String,
+    enum: ['subscribed', 'failed', 'pending'],
+    default: 'pending'
+  },
+  webhook_subscribed_at: {
+    type: Date,
+    default: null
+  },
+  webhook_subscription_error: {
+    type: String,
+    default: null
+  },
 
   deleted_at: {
     type: Date,

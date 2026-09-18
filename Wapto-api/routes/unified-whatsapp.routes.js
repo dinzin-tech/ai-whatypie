@@ -35,5 +35,6 @@ router.get('/phone-numbers', checkPermission('view.unified_whatsapp'), unifiedWh
 router.put('/phone-numbers/:phoneNumberId/set-primary', checkPermission('update.unified_whatsapp'), unifiedWhatsAppController.setPrimaryPhoneNumber);
 router.get('/:wabaId/phone-numbers', checkPermission('view.unified_whatsapp'), unifiedWhatsAppController.getWabaPhoneNumbers);
 router.post('/embedded-signup/connection', checkPermission('create.unified_whatsapp'), unifiedWhatsAppController.getEmbbededSignupConnection);
+router.post('/waba/:id/subscribe-webhooks', checkPermission('update.unified_whatsapp'), unifiedWhatsAppController.subscribeWabaWebhooks);
 router.get('/contact-profile', checkPermission('view.unified_whatsapp'), unifiedWhatsAppController.getContactProfile);
 export default router;
