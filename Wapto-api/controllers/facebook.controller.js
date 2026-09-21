@@ -2,14 +2,12 @@ import mongoose from 'mongoose';
 import { Setting, FacebookConnection, FacebookPage, FacebookAdAccount, WhatsappPhoneNumber } from '../models/index.js';
 import crypto from 'crypto';
 import axios from 'axios';
-
-const FB_API_VERSION = 'v22.0';
-
+import { FB_GRAPH_VERSION } from '../utils/meta-config.js';
 
 const fetchAllFacebookPages = async (accessToken, fbUserId, userId) => {
   let allPages = [];
 
-  let pagesUrl = `https://graph.facebook.com/${FB_API_VERSION}/me/accounts?access_token=${accessToken}&fields=id,name,access_token,category,picture.type(large),is_verified,tasks,business&limit=100`;
+  let pagesUrl = `https://graph.facebook.com/${FB_GRAPH_VERSION}/me/accounts?access_token=${accessToken}&fields=id,name,access_token,category,picture.type(large),is_verified,tasks,business&limit=100`;
   while (pagesUrl) {
     try {
       const response = await axios.get(pagesUrl);
@@ -22,7 +20,7 @@ const fetchAllFacebookPages = async (accessToken, fbUserId, userId) => {
     }
   }
 
-  let businessesUrl = `https://graph.facebook.com/${FB_API_VERSION}/me/businesses?access_token=${accessToken}&fields=id,name&limit=100`;
+  let businessesUrl = `https://graph.facebook.com/${FB_GRAPH_VERSION}/me/businesses?access_token=${accessToken}&fields=id,name&limit=100`;
   let businesses = [];
   while (businessesUrl) {
     try {
@@ -37,8 +35,8 @@ const fetchAllFacebookPages = async (accessToken, fbUserId, userId) => {
 
   for (const biz of businesses) {
     const bizEndpoints = [
-      `https://graph.facebook.com/${FB_API_VERSION}/${biz.id}/owned_pages`,
-      `https://graph.facebook.com/${FB_API_VERSION}/${biz.id}/client_pages`
+      `https://graph.facebook.com/${FB_GRAPH_VERSION}/${biz.id}/owned_pages`,
+      `https://graph.facebook.com/${FB_GRAPH_VERSION}/${biz.id}/client_pages`
     ];
 
     for (const endpoint of bizEndpoints) {
@@ -70,7 +68,7 @@ const fetchAllFacebookPages = async (accessToken, fbUserId, userId) => {
       let isPageWhatsappConnected = false;
       const pageToken = page.access_token || accessToken;
       try {
-        const pageWaRes = await axios.get(`https://graph.facebook.com/${FB_API_VERSION}/${page.id}`, {
+        const pageWaRes = await axios.get(`https://graph.facebook.com/${FB_GRAPH_VERSION}/${page.id}`, {
           params: { fields: 'whatsapp_number,connected_whatsapp_business_account', access_token: pageToken }
         });
         const waNum = pageWaRes.data?.whatsapp_number;
@@ -154,7 +152,7 @@ export const handleFacebookCallback = async (req, res) => {
 
     let accessToken = access_token;
     try {
-      const longLivedTokenRes = await axios.get(`https://graph.facebook.com/${FB_API_VERSION}/oauth/access_token`, {
+      const longLivedTokenRes = await axios.get(`https://graph.facebook.com/${FB_GRAPH_VERSION}/oauth/access_token`, {
         params: {
           grant_type: 'fb_exchange_token',
           client_id: app_id,
@@ -174,14 +172,19 @@ export const handleFacebookCallback = async (req, res) => {
         params: { input_token: accessToken, access_token: appToken }
       });
       grantedScopes = debugRes.data?.data?.scopes || [];
-      console.log("Granted Scopes:", grantedScopes);
-      console.log("Granular Scopes:", debugRes.data?.data?.granular_scopes);
-      console.log("Token Data Access:", debugRes.data?.data?.data_access_expires_at ? new Date(debugRes.data?.data?.data_access_expires_at * 1000) : "N/A");
+      console.log('[FB_CALLBACK] Token Debug Result:', {
+        userId,
+        fbUserId: debugRes.data?.data?.user_id,
+        scopesCount: grantedScopes.length,
+        hasAdsRead: grantedScopes.includes('ads_read'),
+        hasAdsManagement: grantedScopes.includes('ads_management'),
+        isValid: debugRes.data?.data?.is_valid
+      });
     } catch (debugErr) {
       console.warn('Could not debug token:', debugErr?.response?.data || debugErr.message);
     }
 
-    const meRes = await axios.get(`https://graph.facebook.com/${FB_API_VERSION}/me`, {
+    const meRes = await axios.get(`https://graph.facebook.com/${FB_GRAPH_VERSION}/me`, {
       params: { access_token: accessToken, fields: 'id,name,email' }
     });
     const fbUser = meRes.data;
@@ -194,6 +197,8 @@ export const handleFacebookCallback = async (req, res) => {
         email: fbUser.email,
         long_lived_access_token: accessToken,
         granted_scopes: grantedScopes,
+        connection_status: 'CONNECTED',
+        last_synced_at: new Date(),
         is_active: true
       },
       { upsert: true, new: true }
@@ -201,81 +206,133 @@ export const handleFacebookCallback = async (req, res) => {
 
     let pages = [];
     let adAccounts = [];
+    let seenAdAccountIds = new Set();
     try {
       pages = await fetchAllFacebookPages(accessToken, fbUser.id, userId);
 
-      let accountsUrl = `https://graph.facebook.com/${FB_API_VERSION}/me/adaccounts?access_token=${accessToken}&fields=id,name,account_id,currency,account_status,funding_source_details,is_prepay_account,balance&limit=100`;
-      while (accountsUrl) {
-        try {
+      // Multi-tier Ad Account Discovery: Personal + Business Portfolio
+      // 1. Personal Ad Accounts
+      try {
+        let accountsUrl = `https://graph.facebook.com/${FB_GRAPH_VERSION}/me/adaccounts?access_token=${accessToken}&fields=id,name,account_id,currency,account_status,funding_source_details,is_prepay_account,balance&limit=100`;
+        while (accountsUrl) {
           const accResp = await axios.get(accountsUrl);
-          adAccounts = [...adAccounts, ...(accResp.data.data || [])];
+          const batch = accResp.data?.data || [];
+          for (const acc of batch) {
+            if (!seenAdAccountIds.has(acc.id)) {
+              seenAdAccountIds.add(acc.id);
+              adAccounts.push(acc);
+            }
+          }
           accountsUrl = accResp.data.paging?.next || null;
-        } catch (accErr) {
-          console.error('Error fetching ad accounts during callback:', accErr?.response?.data || accErr.message);
-          break;
         }
+      } catch (accErr) {
+        console.warn('[FB_CALLBACK] Personal ad account discovery warning:', {
+          userId,
+          metaErrorCode: accErr?.response?.data?.error?.code,
+          metaErrorMsg: accErr?.response?.data?.error?.message || accErr.message
+        });
       }
 
-        const validPages = pages.filter(p => !!p.access_token);
-        const skippedCount = pages.length - validPages.length;
-        if (skippedCount > 0) {
-          console.warn(`Skipped ${skippedCount} pages because they were missing access_tokens.`);
+      // 2. Business Portfolio Ad Accounts
+      try {
+        let bizUrl = `https://graph.facebook.com/${FB_GRAPH_VERSION}/me/businesses?access_token=${accessToken}&fields=id,name&limit=100`;
+        let businesses = [];
+        while (bizUrl) {
+          const bizResp = await axios.get(bizUrl);
+          businesses = [...businesses, ...(bizResp.data?.data || [])];
+          bizUrl = bizResp.data.paging?.next || null;
         }
 
-        if (validPages.length > 0) {
-          await FacebookPage.deleteMany({ connection_id: connection._id });
+        for (const biz of businesses) {
+          const endpoints = [
+            `https://graph.facebook.com/${FB_GRAPH_VERSION}/${biz.id}/owned_ad_accounts`,
+            `https://graph.facebook.com/${FB_GRAPH_VERSION}/${biz.id}/client_ad_accounts`
+          ];
+          for (const ep of endpoints) {
+            let accUrl = `${ep}?access_token=${accessToken}&fields=id,name,account_id,currency,account_status,funding_source_details,is_prepay_account,balance&limit=100`;
+            while (accUrl) {
+              try {
+                const accResp = await axios.get(accUrl);
+                const batch = accResp.data?.data || [];
+                for (const acc of batch) {
+                  if (!seenAdAccountIds.has(acc.id)) {
+                    seenAdAccountIds.add(acc.id);
+                    adAccounts.push(acc);
+                  }
+                }
+                accUrl = accResp.data.paging?.next || null;
+              } catch {
+                break;
+              }
+            }
+          }
+        }
+      } catch (bizErr) {
+        console.warn('[FB_CALLBACK] Business portfolio ad account discovery warning:', bizErr?.response?.data?.error?.message || bizErr.message);
+      }
 
-          const pageDocs = validPages.map(p => ({
+      console.log('[FB_CALLBACK] Discovery Completed:', {
+        userId,
+        pagesCount: pages.length,
+        adAccountsCount: adAccounts.length
+      });
+
+      const validPages = pages.filter(p => !!p.access_token);
+      if (validPages.length > 0) {
+        await FacebookPage.deleteMany({ connection_id: connection._id });
+
+        const pageDocs = validPages.map(p => ({
+          user_id: userId,
+          connection_id: connection._id,
+          page_id: p.id,
+          page_name: p.name,
+          page_access_token: p.access_token,
+          category: p.category,
+          picture_url: p.picture?.data?.url,
+          is_meta_verified: p.is_verified || false,
+          business_id: p.business?.id || null,
+          is_whatsapp_connected: !!p.is_whatsapp_connected,
+          is_active: true
+        }));
+
+        await FacebookPage.insertMany(pageDocs);
+      }
+
+      if (adAccounts.length > 0) {
+        const adAccountStatusMap = {
+          1: 'Active', 2: 'Disabled', 3: 'Unsettled', 7: 'Pending Review',
+          9: 'In Grace Period', 100: 'Pending Closure', 101: 'Test Account', 201: 'Closed'
+        };
+
+        const adDocs = adAccounts.map(acc => {
+          const hasPaymentMethod = !!(acc.funding_source_details?.id);
+          return {
             user_id: userId,
             connection_id: connection._id,
-            page_id: p.id,
-            page_name: p.name,
-            page_access_token: p.access_token,
-            category: p.category,
-            picture_url: p.picture?.data?.url,
-            is_meta_verified: p.is_verified || false,
-            business_id: p.business?.id || null,
-            is_whatsapp_connected: !!p.is_whatsapp_connected,
+            ad_account_id: acc.id,
+            name: acc.name,
+            currency: acc.currency,
+            account_status: acc.account_status,
+            status_label: adAccountStatusMap[acc.account_status] || 'Unknown',
+            has_payment_method: hasPaymentMethod,
+            can_create_ads: acc.account_status === 1 && hasPaymentMethod,
+            balance: acc.balance,
             is_active: true
-          }));
-
-          await FacebookPage.insertMany(pageDocs);
-        }
-
-        if (adAccounts.length > 0) {
-          const adAccountStatusMap = {
-            1: 'Active', 2: 'Disabled', 3: 'Unsettled', 7: 'Pending Review',
-            9: 'In Grace Period', 100: 'Pending Closure', 101: 'Test Account', 201: 'Closed'
           };
+        });
 
-          const adDocs = adAccounts.map(acc => {
-            const hasPaymentMethod = !!(acc.funding_source_details?.id);
-            return {
-              user_id: userId,
-              connection_id: connection._id,
-              ad_account_id: acc.id,
-              name: acc.name,
-              currency: acc.currency,
-              account_status: acc.account_status,
-              status_label: adAccountStatusMap[acc.account_status] || 'Unknown',
-              has_payment_method: hasPaymentMethod,
-              can_create_ads: acc.account_status === 1 && hasPaymentMethod,
-              balance: acc.balance,
-              is_active: true
-            };
-          });
-
-          await FacebookAdAccount.deleteMany({ connection_id: connection._id });
-          await FacebookAdAccount.insertMany(adDocs);
-        }
+        await FacebookAdAccount.deleteMany({ connection_id: connection._id });
+        await FacebookAdAccount.insertMany(adDocs);
+      }
     } catch (pageErr) {
-      console.warn('Failed to fetch Facebook pages during connection:', pageErr.message);
+      console.warn('Failed to fetch Facebook pages/ad accounts during connection:', pageErr.message);
     }
 
     return res.status(200).json({
       success: true,
       message: 'Facebook account linked successfully!',
       pages: pages.length || 0,
+      adAccounts: adAccounts.length || 0,
       data: pages
     });
 

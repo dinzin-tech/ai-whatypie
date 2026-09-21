@@ -32,6 +32,15 @@ const facebookConnectionSchema = new mongoose.Schema({
   granted_scopes: {
     type: [String],
     default: []
+  },
+  connection_status: {
+    type: String,
+    enum: ['CONNECTED', 'DISCONNECTED', 'MISSING_OAUTH_PERMISSION', 'INVALID_FACEBOOK_TOKEN', 'NO_AD_ACCOUNT_ACCESS'],
+    default: 'CONNECTED'
+  },
+  last_synced_at: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

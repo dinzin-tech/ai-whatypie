@@ -33,7 +33,7 @@ export default function FacebookSDKProvider({ children }: { children: ReactNode 
         appId: setting.app_id,
         cookie: true,
         xfbml: false,
-        version: "v25.0",
+        version: process.env.NEXT_PUBLIC_META_GRAPH_API_VERSION || "v26.0",
       });
 
       setReady(true);

@@ -59,9 +59,13 @@ const FacebookAccountList: React.FC = () => {
     try {
       const mutation = activeTab === "pages" ? syncPages : syncAds;
       const res = await mutation().unwrap();
-      toast.success(res.message || t("sync_success"));
+      if (res.code === "NO_AD_ACCOUNT_ACCESS") {
+        toast.info(res.message || "No active Facebook Ad Accounts were found for your Meta account.");
+      } else {
+        toast.success(res.message || t("sync_success"));
+      }
     } catch (err: any) {
-      toast.error(err?.data?.error || t("sync_failed"));
+      toast.error(err?.data?.details || err?.data?.error || t("sync_failed"));
     }
   };
 

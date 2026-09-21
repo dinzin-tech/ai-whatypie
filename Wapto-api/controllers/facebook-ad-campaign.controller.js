@@ -6,9 +6,9 @@ import path from 'path';
 import crypto from 'crypto';
 import { FacebookConnection, FacebookPage, FacebookAdAccount, AutomationFlow, FacebookAdSet, FacebookAd } from '../models/index.js';
 import FacebookAdCampaign from '../models/facebook-ad-campaign.model.js';
+import { FB_GRAPH_VERSION } from '../utils/meta-config.js';
 
-const FB_API_VERSION = 'v20.0';
-const BASE = `https://graph.facebook.com/${FB_API_VERSION}`;
+const BASE = `https://graph.facebook.com/${FB_GRAPH_VERSION}`;
 
 
 const getOwnerId = (user) => user.owner_id || user.id;
@@ -482,7 +482,33 @@ export const syncFacebookAdAccounts = async (req, res) => {
   try {
     const userId = getOwnerId(req.user);
     const connection = await requireConnection(userId);
-    const { long_lived_access_token: token } = connection;
+    const { long_lived_access_token: token, granted_scopes = [] } = connection;
+
+    // STEP A, B, C: Check whether required OAuth scope is granted in connection.granted_scopes
+    const hasAdsReadPermission = Array.isArray(granted_scopes) && granted_scopes.includes('ads_read');
+
+    console.log('[syncFacebookAdAccounts] Permission check:', {
+      userId,
+      connectionId: connection._id,
+      grantedScopesCount: granted_scopes.length,
+      hasAdsRead: hasAdsReadPermission,
+      hasAdsManagement: Array.isArray(granted_scopes) && granted_scopes.includes('ads_management')
+    });
+
+    if (!hasAdsReadPermission) {
+      // Explicitly missing OAuth scope permission
+      await FacebookConnection.updateOne(
+        { _id: connection._id },
+        { $set: { connection_status: 'MISSING_OAUTH_PERMISSION' } }
+      );
+
+      return res.status(400).json({
+        success: false,
+        code: 'MISSING_OAUTH_PERMISSION',
+        error: 'Missing Facebook Ad Account Permission',
+        details: "Your connected Facebook account is missing the required 'ads_read' permission. Please click 'Connect Facebook' to reconnect and grant Ad Account access."
+      });
+    }
 
     let allAccounts = [];
     let seenAccountIds = new Set();
@@ -502,17 +528,14 @@ export const syncFacebookAdAccounts = async (req, res) => {
         url = resp.data.paging?.next || null;
       }
     } catch (personalErr) {
-      const errMessage = personalErr?.response?.data?.error?.message || personalErr.message;
-      const errCode = personalErr?.response?.data?.error?.code;
-
-      if (errCode === 200 || (errMessage && errMessage.includes('Missing Permissions'))) {
-        return res.status(400).json({
-          success: false,
-          error: 'Missing Facebook Ad Account Permission',
-          details: "Your connected Facebook token is missing the required 'ads_read' or 'ads_management' permission. Please click 'Connect Facebook' to reconnect and grant Ad Account access."
-        });
-      }
-      console.warn('[syncFacebookAdAccounts] Error fetching personal ad accounts:', errMessage);
+      const metaErrCode = personalErr?.response?.data?.error?.code;
+      const metaErrorMsg = personalErr?.response?.data?.error?.message || personalErr.message;
+      console.warn('[syncFacebookAdAccounts] Personal ad account fetch warning:', {
+        userId,
+        metaErrCode,
+        metaErrorMsg
+      });
+      // DO NOT abort here! Continue to Business Portfolio ad account discovery below.
     }
 
     // 2. Fetch business portfolio ad accounts (owned & client ad accounts)
@@ -540,18 +563,42 @@ export const syncFacebookAdAccounts = async (req, res) => {
                 }
               }
               accUrl = accResp.data.paging?.next || null;
-            } catch {
+            } catch (epErr) {
+              console.warn(`[syncFacebookAdAccounts] Portfolio endpoint warning for ${ep}:`, epErr?.response?.data?.error?.message || epErr.message);
               break;
             }
           }
         }
       }
     } catch (bizErr) {
-      console.warn('[syncFacebookAdAccounts] Error fetching business portfolio ad accounts:', bizErr.message);
+      console.warn('[syncFacebookAdAccounts] Error fetching business portfolio ad accounts:', bizErr?.response?.data?.error?.message || bizErr.message);
     }
 
+    console.log('[syncFacebookAdAccounts] Discovery summary:', {
+      userId,
+      totalDiscovered: allAccounts.length,
+      discoveredAccountIds: Array.from(seenAccountIds)
+    });
+
+    const now = new Date();
+    await FacebookConnection.updateOne(
+      { _id: connection._id },
+      {
+        $set: {
+          last_synced_at: now,
+          connection_status: allAccounts.length > 0 ? 'CONNECTED' : 'NO_AD_ACCOUNT_ACCESS'
+        }
+      }
+    );
+
     if (allAccounts.length === 0) {
-       return res.json({ success: true, message: 'No ad accounts found on Meta', count: 0 });
+      return res.status(200).json({
+        success: true,
+        code: 'NO_AD_ACCOUNT_ACCESS',
+        message: 'No active Facebook Ad Accounts were found for your Meta account. Please verify that your Facebook profile has access to an Ad Account in Meta Business Manager.',
+        count: 0,
+        data: []
+      });
     }
 
     const adAccountStatusMap = {
@@ -591,7 +638,9 @@ export const syncFacebookAdAccounts = async (req, res) => {
       { $set: { is_active: false } }
     );
 
-    await FacebookAdAccount.bulkWrite(operations);
+    if (operations.length > 0) {
+      await FacebookAdAccount.bulkWrite(operations);
+    }
 
     return res.json({
       success: true,
@@ -605,6 +654,7 @@ export const syncFacebookAdAccounts = async (req, res) => {
     console.error('[syncFacebookAdAccounts] Error:', error?.response?.data || error.message);
     return res.status(500).json({
       success: false,
+      code: 'META_API_ERROR',
       error: 'Failed to synchronize ad accounts',
       details: error?.response?.data?.error?.message || error.message
     });
