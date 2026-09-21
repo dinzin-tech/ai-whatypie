@@ -24,7 +24,6 @@ export const useFacebookLogin = (onFinish?: (data: any) => void) => {
           const handleAuth = async () => {
             try {
               const response = await connectFacebook({ access_token: accessToken }).unwrap();
-              console.log(response);
               toast.success(response.message || "Facebook connected successfully!");
               if (onFinish) {
                 try {
@@ -34,7 +33,6 @@ export const useFacebookLogin = (onFinish?: (data: any) => void) => {
                 }
               }
             } catch (error: any) {
-              console.log(error);
               toast.error(error?.data?.error || "Failed to connect Facebook account.");
             } finally {
               setIsConnecting(false);
@@ -47,7 +45,7 @@ export const useFacebookLogin = (onFinish?: (data: any) => void) => {
         }
       },
       {
-        scope: "email,public_profile,business_management,catalog_management,instagram_basic,ads_management,ads_read,leads_retrieval,pages_manage_ads,pages_manage_metadata,pages_read_engagement,pages_show_list,pages_manage_engagement,whatsapp_business_management,whatsapp_business_messaging",
+        scope: "public_profile,email,ads_read,ads_management,pages_show_list,pages_read_engagement",
         return_scopes: true,
       }
     );

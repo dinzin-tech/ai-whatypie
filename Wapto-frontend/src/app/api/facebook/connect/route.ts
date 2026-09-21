@@ -20,14 +20,12 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify(body),
     });
-      console.log("🚀 ~ POST ~ body:", body)
+    console.log("Next.js Proxy [FB Connect]:", { hasAccessToken: !!body?.access_token, status: response.status });
 
     const data = await response.json();
-    console.log("🚀 ~ POST ~ data:", data)
     return NextResponse.json(data, { status: response.status });
   } catch (error: any) {
-    console.log("🚀 ~ POST ~ error:", error)
-    console.error("Error in Facebook callback proxy:", error);
-    return NextResponse.json({ success: false, error: "Failed to process Facebook setup", details: error.message }, { status: 500 });
+    console.error("Error in Facebook callback proxy:", error?.message || "Internal Error");
+    return NextResponse.json({ success: false, error: "Failed to process Facebook setup" }, { status: 500 });
   }
 }

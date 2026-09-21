@@ -11,7 +11,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const token = session?.accessToken as string | undefined;
     
     const body = await request.json();
-    console.log("Next.js Proxy [WABA Update] Body:", JSON.stringify(body));
+    console.log("Next.js Proxy [WABA Update]:", { pageId: id, hasBody: !!body });
 
     const response = await fetch(`${getBackendApiUrl()}/facebook/pages/${id}/waba`, {
       method: "PUT",
