@@ -359,6 +359,23 @@ class AppointmentService {
         finalPhId = phone ? phone._id : config.waba_id;
       }
 
+      const { Template } = await import('../models/index.js');
+      const templateDoc = await Template.findById(templateId).lean();
+      if (!templateDoc) {
+        console.error(`[appointment_service] Template not found in DB: ${templateId}`);
+        return;
+      }
+
+      let expectedParamCount = 0;
+      if (Array.isArray(templateDoc.body_variables) && templateDoc.body_variables.length > 0) {
+        expectedParamCount = templateDoc.body_variables.length;
+      } else if (templateDoc.message_body) {
+        const matches = templateDoc.message_body.match(/\{\{\d+\}\}/g);
+        if (matches) {
+          expectedParamCount = new Set(matches).size;
+        }
+      }
+
       let mappings = config.variable_mappings?.[mappingType] || {};
       if (Object.keys(mappings).length === 0 && mappingType !== 'success') {
         mappings = config.variable_mappings?.['success'] || {};
@@ -405,28 +422,63 @@ class AppointmentService {
 
       console.log(`[Flashlight] Final resolved variables: ${JSON.stringify(variables)}`);
 
-      if (Object.keys(variables).length === 0) {
-        variables["1"] = contact.name || 'Guest';
-        variables["2"] = moment(booking.start_time).format('MMM D, YYYY h:mm A');
-        variables["3"] = booking.google_meet_link || 'N/A';
+      const getDefaultValueForKey = (keyIndex) => {
+        if (keyIndex === 1) {
+          return expectedParamCount === 2 ? (config.name || contact.name || 'Guest') : (contact.name || 'Guest');
+        } else if (keyIndex === 2) {
+          return moment(booking.start_time).format('MMM D, YYYY h:mm A');
+        } else if (keyIndex === 3) {
+          return booking.google_meet_link || 'N/A';
+        }
+        return 'N/A';
+      };
+
+      if (expectedParamCount > 0) {
+        if (Array.isArray(templateDoc.body_variables) && templateDoc.body_variables.length > 0) {
+          templateDoc.body_variables.forEach((bv, idx) => {
+            const keyStr = bv.key || String(idx + 1);
+            if (!variables[keyStr]) {
+              variables[keyStr] = getDefaultValueForKey(idx + 1);
+            }
+          });
+        } else {
+          for (let i = 1; i <= expectedParamCount; i++) {
+            const keyStr = String(i);
+            if (!variables[keyStr]) {
+              variables[keyStr] = getDefaultValueForKey(i);
+            }
+          }
+        }
       }
 
-      const { Template } = await import('../models/index.js');
-      const templateDoc = await Template.findById(templateId).lean();
-      if (!templateDoc) {
-        console.error(`[appointment_service] Template not found in DB: ${templateId}`);
-        return;
-      }
-
-      const templateComponents = [{
-        type: 'body',
-        parameters: Object.entries(variables)
-          .sort((a, b) => parseInt(a[0]) - parseInt(b[0])) 
+      let parameters = [];
+      if (Array.isArray(templateDoc.body_variables) && templateDoc.body_variables.length > 0) {
+        parameters = templateDoc.body_variables.map((bv, idx) => {
+          const keyStr = bv.key || String(idx + 1);
+          const val = variables[keyStr] !== undefined ? variables[keyStr] : getDefaultValueForKey(idx + 1);
+          return { type: 'text', text: val.toString() };
+        });
+      } else if (expectedParamCount > 0) {
+        parameters = Object.entries(variables)
+          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+          .slice(0, expectedParamCount)
           .map(([_, val]) => ({
             type: 'text',
             text: val.toString()
-          }))
-      }];
+          }));
+      }
+
+      if (parameters.length !== expectedParamCount) {
+        console.error(
+          `[appointment_service] Template parameter mismatch for "${templateDoc.template_name}": expected ${expectedParamCount}, got ${parameters.length}. Aborting send to prevent Meta error 132000.`
+        );
+        return;
+      }
+
+      const templateComponents = expectedParamCount > 0 ? [{
+        type: 'body',
+        parameters
+      }] : [];
 
       await unifiedWhatsAppService.sendMessage(userId, {
         recipientNumber: contact.phone_number,
