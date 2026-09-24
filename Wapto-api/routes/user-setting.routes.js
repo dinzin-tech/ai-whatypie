@@ -1,5 +1,5 @@
 import express from 'express';
-import { getUserSettings, updateUserSettings } from '../controllers/user-setting.controller.js';
+import { getUserSettings, updateUserSettings, testUserAiConnection } from '../controllers/user-setting.controller.js';
 import { authenticate } from '../middlewares/auth.js';
 import { checkPermission } from '../middlewares/permission.js';
 
@@ -11,4 +11,7 @@ router.get('/', authenticate, checkPermission('view.user_settings'), getUserSett
 
 router.put('/', authenticate, checkPermission('update.user_settings'), uploader('attachments').fields([{ name: 'bg_image', maxCount: 1 }]), updateUserSettings);
 
+router.post('/test-connection', authenticate, checkPermission('view.user_settings'), testUserAiConnection);
+
 export default router;
+

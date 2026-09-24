@@ -101,11 +101,21 @@ export interface AIModel {
   model_id: string;
   status: string;
   is_default: boolean;
+  capabilities?: {
+    translate?: boolean;
+    summarize?: boolean;
+    improve?: boolean;
+    formalize?: boolean;
+    casualize?: boolean;
+    reply_suggestion?: boolean;
+  };
 }
 
 export interface AISettings {
   ai_model: string | null;
   api_key: string | null;
+  api_key_configured?: boolean;
+  api_key_masked?: string | null;
   is_subscribed?: boolean;
   is_show_phone_no?: boolean;
   notification_tone?: string;
@@ -142,12 +152,28 @@ export interface AIModelsResponse {
   data: {
     models: AIModel[];
     pagination: {
-      total: number;
-      totalPages: number;
       currentPage: number;
-      perPage: number;
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
+      totalPages: number;
+      totalItems: number;
+      itemsPerPage: number;
     };
   };
 }
+
+export interface TestConnectionRequest {
+  ai_model?: string;
+  api_key?: string;
+}
+
+export interface TestConnectionResponse {
+  success: boolean;
+  message?: string;
+  code?: string;
+  data?: {
+    provider: string;
+    model: string;
+    latency_ms: number;
+    response: string;
+  };
+}
+

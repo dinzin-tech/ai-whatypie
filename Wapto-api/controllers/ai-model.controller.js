@@ -15,7 +15,7 @@ const SORT_ORDER = {
   DESC: -1,
 };
 
-const PROVIDERS = ["openai", "anthropic", "google", "groq", "mistral"];
+const PROVIDERS = ["openai", "openrouter", "anthropic", "google", "cohere", "mistral", "groq", "deepseek", "xai", "custom"];
 
 const parsePaginationParams = (query) => {
   const page = Math.max(1, parseInt(query.page) || DEFAULT_PAGE);
@@ -145,7 +145,7 @@ export const getModelById = async (req, res) => {
 
 export const createModel = async (req, res) => {
   try {
-    const { displayName, provider, modelId, apiEndpoint, apiVersion, capabilities, config, headersTemplate, requestFormat, responsePath, description } = req.body;
+    const { displayName, provider, modelId, apiEndpoint, apiVersion, capabilities, config, headersTemplate, requestFormat, responsePath, description, isDefault, is_default } = req.body;
 
     if (!displayName || !provider || !modelId || !apiEndpoint) {
       return res.status(400).json({
@@ -166,6 +166,11 @@ export const createModel = async (req, res) => {
       });
     }
 
+    const setAsDefault = is_default === true || isDefault === true;
+    if (setAsDefault) {
+      await AIModel.updateMany({}, { is_default: false });
+    }
+
     const newModel = await AIModel.create({
       display_name: displayName.trim(),
       provider: provider.toLowerCase(),
@@ -177,8 +182,8 @@ export const createModel = async (req, res) => {
       headers_template: headersTemplate ? new Map(Object.entries(headersTemplate)) : new Map(),
       request_format: requestFormat || "openai",
       response_path: responsePath || "choices.0.message.content",
+      is_default: setAsDefault,
       description: description || "",
-      // created_by: req.user.id
     });
 
     return res.status(201).json({
@@ -221,6 +226,10 @@ export const updateModel = async (req, res) => {
       headersTemplate: "headers_template",
       apiKey: "api_key"
     };
+
+    if (updateData.is_default === true || updateData.isDefault === true) {
+      await AIModel.updateMany({ _id: { $ne: id } }, { is_default: false });
+    }
 
     allowedUpdates.forEach((field) => {
       if (updateData[field] !== undefined) {
@@ -391,7 +400,8 @@ export const testModelApi = async (req, res) => {
     if (!modelId || !prompt || !apiKey) {
       return res.status(400).json({
         success: false,
-        message: "modelId , apiKey and prompt are required",
+        code: "INVALID_REQUEST",
+        message: "modelId, apiKey, and prompt are required",
       });
     }
 
@@ -403,6 +413,7 @@ export const testModelApi = async (req, res) => {
     if (!model) {
       return res.status(404).json({
         success: false,
+        code: "MODEL_NOT_FOUND",
         message: "AI Model not found",
       });
     }
@@ -423,17 +434,18 @@ export const testModelApi = async (req, res) => {
     return res.json({
       success: true,
       data: {
-        response: result,
+        response: result.responseText || result,
+        latency_ms: result.latencyMs,
         model: model.display_name,
         provider: model.provider,
       },
     });
   } catch (error) {
-    console.error("Test model API error:", error);
-    return res.status(500).json({
+    console.error("Test model API error:", error.message);
+    return res.status(error.status || 500).json({
       success: false,
-      message: "Failed to test AI model",
-      error: error.message,
+      code: error.code || "UNKNOWN_PROVIDER_ERROR",
+      message: error.message || "Failed to test AI model",
     });
   }
 };

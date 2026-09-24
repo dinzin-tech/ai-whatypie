@@ -15,7 +15,7 @@ const aiModelSchema = new mongoose.Schema(
         provider: {
             type: String,
             required: true,
-            enum: ['openai', 'anthropic', 'google', 'cohere', 'mistral', 'groq', 'deepseek', 'xai', 'custom'],
+            enum: ['openai', 'openrouter', 'anthropic', 'google', 'cohere', 'mistral', 'groq', 'deepseek', 'xai', 'custom'],
             lowercase: true
         },
         model_id: {

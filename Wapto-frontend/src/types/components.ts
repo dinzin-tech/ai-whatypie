@@ -365,6 +365,11 @@ export interface SuggestReplyModalProps {
 export interface ApiKeyConfigProps {
   value: string;
   onChange: (value: string) => void;
+  apiKeyConfigured?: boolean;
+  apiKeyMasked?: string | null;
+  onTestConnection?: () => void;
+  isTesting?: boolean;
+  testResult?: { success: boolean; message?: string; latency_ms?: number } | null;
 }
 
 export interface ConfigurationSummaryProps {

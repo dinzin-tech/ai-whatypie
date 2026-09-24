@@ -1,4 +1,4 @@
-import { AIModelsResponse, AISettings, AISettingsResponse } from "@/src/types/settings";
+import { AIModelsResponse, AISettings, AISettingsResponse, TestConnectionRequest, TestConnectionResponse } from "@/src/types/settings";
 import { baseApi } from "./baseApi";
 
 export const settingsApi = baseApi.enhanceEndpoints({ addTagTypes: ["Settings"] }).injectEndpoints({
@@ -30,7 +30,15 @@ export const settingsApi = baseApi.enhanceEndpoints({ addTagTypes: ["Settings"] 
       }),
       invalidatesTags: ["Settings"],
     }),
+    testAIConnection: builder.mutation<TestConnectionResponse, TestConnectionRequest>({
+      query: (body) => ({
+        url: "/setup/test-connection",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
-export const { useGetSettingsQuery, useGetUserSettingsQuery, useGetAllModelsQuery, useUpdateUserSettingsMutation } = settingsApi;
+export const { useGetSettingsQuery, useGetUserSettingsQuery, useGetAllModelsQuery, useUpdateUserSettingsMutation, useTestAIConnectionMutation } = settingsApi;
+
