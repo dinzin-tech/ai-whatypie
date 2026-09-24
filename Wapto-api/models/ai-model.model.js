@@ -25,7 +25,7 @@ const aiModelSchema = new mongoose.Schema(
         },
         api_endpoint: {
             type: String,
-            required: true,
+            default: null,
             trim: true
         },
         api_version: {

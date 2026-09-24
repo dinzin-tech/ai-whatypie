@@ -3,6 +3,37 @@ import { decryptApiKey } from './encryption-utils.js';
 
 const DEFAULT_TIMEOUT_MS = parseInt(process.env.AI_REQUEST_TIMEOUT_MS, 10) || 30000;
 
+const NON_RETRYABLE_CODES = new Set([
+  'AI_ENDPOINT_MISSING',
+  'AI_ENDPOINT_INVALID',
+  'MODEL_NOT_FOUND',
+  'MODEL_INACTIVE',
+  'INVALID_API_KEY',
+  'INVALID_REQUEST',
+  'ERR_INVALID_URL'
+]);
+
+export const normalizeProvider = (model) => {
+  if (!model) return 'unknown';
+  const rawProvider = (model.provider || '').toLowerCase().trim();
+  const endpoint = (model.api_endpoint || '').toLowerCase();
+  const modelId = (model.model_id || '').toLowerCase();
+
+  if (
+    rawProvider === 'openrouter' ||
+    endpoint.includes('openrouter.ai') ||
+    modelId.startsWith('openrouter/')
+  ) {
+    return 'openrouter';
+  }
+
+  if (['openai', 'anthropic', 'google', 'groq', 'mistral', 'deepseek', 'xai', 'cohere'].includes(rawProvider)) {
+    return rawProvider;
+  }
+
+  return rawProvider || 'custom';
+};
+
 const getNestedValue = (obj, path) => {
   if (!obj || !path) return undefined;
   return path.split('.').reduce((current, key) => current?.[key], obj);
@@ -12,7 +43,7 @@ const getRequestFormat = (model) => {
   if (model.request_format) {
     return model.request_format.toLowerCase();
   }
-  const provider = (model.provider || '').toLowerCase();
+  const provider = normalizeProvider(model);
   if (provider === 'anthropic') return 'anthropic';
   if (provider === 'google') return 'google';
   return 'openai';
@@ -60,7 +91,7 @@ const formatRequestBody = (model, prompt) => {
 };
 
 const formatRequestHeaders = (model, apiKey) => {
-  const { provider, api_version, headers_template } = model;
+  const { api_version, headers_template } = model;
   const headers = {
     'Content-Type': 'application/json'
   };
@@ -93,7 +124,7 @@ const formatRequestHeaders = (model, apiKey) => {
     }
   }
 
-  const normalizedProvider = (provider || '').toLowerCase();
+  const normalizedProvider = normalizeProvider(model);
 
   switch (normalizedProvider) {
     case 'anthropic':
@@ -142,46 +173,48 @@ const formatRequestHeaders = (model, apiKey) => {
 };
 
 const buildApiEndpoint = (model, apiKey) => {
-  let { api_endpoint, provider, model_id } = model;
-  const normalizedProvider = (provider || '').toLowerCase();
+  let { api_endpoint, model_id } = model;
+  const normalizedProvider = normalizeProvider(model);
   const rawApiKey = decryptApiKey(apiKey);
 
   if (normalizedProvider === 'openrouter') {
     if (!api_endpoint || api_endpoint.trim() === '') {
       return 'https://openrouter.ai/api/v1/chat/completions';
     }
-    return api_endpoint;
+    return api_endpoint.trim();
   }
 
   if (normalizedProvider === 'openai') {
     if (!api_endpoint || api_endpoint.trim() === '') {
       return 'https://api.openai.com/v1/chat/completions';
     }
-    return api_endpoint;
+    return api_endpoint.trim();
   }
 
   if (normalizedProvider === 'anthropic') {
     if (!api_endpoint || api_endpoint.trim() === '') {
       return 'https://api.anthropic.com/v1/messages';
     }
-    return api_endpoint;
+    return api_endpoint.trim();
   }
 
   if (normalizedProvider === 'google') {
-    let url = api_endpoint || 'https://generativelanguage.googleapis.com/v1/models';
+    let url = (api_endpoint || 'https://generativelanguage.googleapis.com/v1').trim();
 
     if (url.includes('v1beta') && (model_id.includes('gemini-1.5') || model_id.includes('gemini-2.'))) {
       url = url.replace('v1beta', 'v1');
     }
 
-    if (url.endsWith('/models') || url.endsWith('/v1') || url.endsWith('/v1beta')) {
-      const baseUrl = url.endsWith('/models') ? url : `${url.replace(/\/$/, '')}/models`;
-      url = `${baseUrl}/${model_id}:generateContent`;
-    } else if (!url.includes(':generateContent')) {
-      if (url.endsWith(model_id)) {
+    if (!url.includes(':generateContent')) {
+      if (url.endsWith('/models') || url.endsWith('/v1') || url.endsWith('/v1beta')) {
+        const baseUrl = url.endsWith('/models') ? url : `${url.replace(/\/$/, '')}/models`;
+        url = `${baseUrl}/${model_id}:generateContent`;
+      } else if (url.endsWith(model_id)) {
         url = `${url}:generateContent`;
       } else if (!url.includes('/models/')) {
         url = `${url.replace(/\/$/, '')}/models/${model_id}:generateContent`;
+      } else {
+        url = `${url.replace(/\/$/, '')}:generateContent`;
       }
     }
 
@@ -189,11 +222,44 @@ const buildApiEndpoint = (model, apiKey) => {
     return `${url}${separator}key=${rawApiKey}`;
   }
 
-  return api_endpoint;
+  return api_endpoint ? api_endpoint.trim() : null;
+};
+
+export const validateEndpoint = (apiEndpoint) => {
+  if (!apiEndpoint || typeof apiEndpoint !== 'string' || apiEndpoint.trim() === '') {
+    const err = new Error('AI provider endpoint is not configured.');
+    err.code = 'AI_ENDPOINT_MISSING';
+    throw err;
+  }
+
+  const trimmed = apiEndpoint.trim();
+
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      const err = new Error('AI provider endpoint is invalid.');
+      err.code = 'AI_ENDPOINT_INVALID';
+      throw err;
+    }
+    return trimmed;
+  } catch {
+    const err = new Error('AI provider endpoint is invalid.');
+    err.code = 'AI_ENDPOINT_INVALID';
+    throw err;
+  }
+};
+
+export const sanitizeUrlForLogging = (url) => {
+  if (!url || typeof url !== 'string') return '';
+  return url.replace(/([?&]key=)[^&]+/g, '$1••••••••');
 };
 
 export const normalizeAiError = (status, errorData, originalError) => {
-  let code = 'UNKNOWN_PROVIDER_ERROR';
+  if (originalError?.code === 'AI_ENDPOINT_MISSING' || originalError?.code === 'AI_ENDPOINT_INVALID') {
+    return originalError;
+  }
+
+  let code = originalError?.code || 'UNKNOWN_PROVIDER_ERROR';
   let message = originalError?.message || 'AI request failed';
 
   if (status === 401 || status === 403) {
@@ -241,7 +307,10 @@ const callAIModel = async (userId, model, apiKey, prompt, options = {}) => {
 
   const requestBody = formatRequestBody(model, prompt);
   const requestHeaders = formatRequestHeaders(model, rawApiKey);
-  const apiEndpoint = buildApiEndpoint(model, rawApiKey);
+  const rawEndpoint = buildApiEndpoint(model, rawApiKey);
+
+  // Validate endpoint BEFORE fetch call
+  const apiEndpoint = validateEndpoint(rawEndpoint);
 
   const executeFetch = async () => {
     const controller = new AbortController();
@@ -257,20 +326,20 @@ const callAIModel = async (userId, model, apiKey, prompt, options = {}) => {
       });
 
       const latencyMs = Date.now() - startTime;
+      const normalizedProv = normalizeProvider(model);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.log(`[AI Request] Provider: ${model.provider}, Model: ${model.model_id}, Status: ${response.status}, Latency: ${latencyMs}ms, Success: false`);
+        console.log(`[AI Request] Provider: ${normalizedProv}, Model: ${model.model_id}, Status: ${response.status}, Latency: ${latencyMs}ms, Success: false`);
         throw normalizeAiError(response.status, errorData);
       }
 
       const data = await response.json();
-      console.log(`[AI Request] Provider: ${model.provider}, Model: ${model.model_id}, Status: 200, Latency: ${latencyMs}ms, Success: true`);
+      console.log(`[AI Request] Provider: ${normalizedProv}, Model: ${model.model_id}, Status: 200, Latency: ${latencyMs}ms, Success: true`);
 
       let responseText;
-      const normalizedProvider = (model.provider || '').toLowerCase();
 
-      if (normalizedProvider === 'google') {
+      if (normalizedProv === 'google') {
         const parts = data.candidates?.[0]?.content?.parts || [];
         responseText = parts.map(part => part.text).join('');
         if (!responseText) {
@@ -299,7 +368,18 @@ const callAIModel = async (userId, model, apiKey, prompt, options = {}) => {
   try {
     result = await executeFetch();
   } catch (err) {
-    if (!isTest && (err.status >= 500 || err.code === 'TIMEOUT' || !err.status)) {
+    const isRetryable =
+      !isTest &&
+      !NON_RETRYABLE_CODES.has(err.code) &&
+      (
+        (err.status >= 500 && err.status <= 599) ||
+        err.code === 'TIMEOUT' ||
+        err.code === 'ECONNRESET' ||
+        err.code === 'ETIMEDOUT' ||
+        err.name === 'FetchError'
+      );
+
+    if (isRetryable) {
       result = await executeFetch();
     } else {
       throw err;

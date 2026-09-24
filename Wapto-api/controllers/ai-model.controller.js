@@ -147,10 +147,10 @@ export const createModel = async (req, res) => {
   try {
     const { displayName, provider, modelId, apiEndpoint, apiVersion, capabilities, config, headersTemplate, requestFormat, responsePath, description, isDefault, is_default } = req.body;
 
-    if (!displayName || !provider || !modelId || !apiEndpoint) {
+    if (!displayName || !provider || !modelId) {
       return res.status(400).json({
         success: false,
-        message: "displayName, provider, modelId, and apiEndpoint are required",
+        message: "displayName, provider, and modelId are required",
       });
     }
 
@@ -175,7 +175,7 @@ export const createModel = async (req, res) => {
       display_name: displayName.trim(),
       provider: provider.toLowerCase(),
       model_id: modelId.trim(),
-      api_endpoint: apiEndpoint.trim(),
+      api_endpoint: apiEndpoint ? apiEndpoint.trim() : null,
       api_version: apiVersion || null,
       capabilities: capabilities || {},
       config: config || {},
