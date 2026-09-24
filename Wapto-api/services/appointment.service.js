@@ -436,15 +436,15 @@ class AppointmentService {
       if (expectedParamCount > 0) {
         if (Array.isArray(templateDoc.body_variables) && templateDoc.body_variables.length > 0) {
           templateDoc.body_variables.forEach((bv, idx) => {
-            const keyStr = bv.key || String(idx + 1);
-            if (!variables[keyStr]) {
+            const keyStr = String(bv.key !== undefined && bv.key !== null ? bv.key : (idx + 1));
+            if (variables[keyStr] === undefined || variables[keyStr] === null) {
               variables[keyStr] = getDefaultValueForKey(idx + 1);
             }
           });
         } else {
           for (let i = 1; i <= expectedParamCount; i++) {
             const keyStr = String(i);
-            if (!variables[keyStr]) {
+            if (variables[keyStr] === undefined || variables[keyStr] === null) {
               variables[keyStr] = getDefaultValueForKey(i);
             }
           }
@@ -454,8 +454,10 @@ class AppointmentService {
       let parameters = [];
       if (Array.isArray(templateDoc.body_variables) && templateDoc.body_variables.length > 0) {
         parameters = templateDoc.body_variables.map((bv, idx) => {
-          const keyStr = bv.key || String(idx + 1);
-          const val = variables[keyStr] !== undefined ? variables[keyStr] : getDefaultValueForKey(idx + 1);
+          const keyStr = String(bv.key !== undefined && bv.key !== null ? bv.key : (idx + 1));
+          const val = (variables[keyStr] !== undefined && variables[keyStr] !== null)
+            ? variables[keyStr]
+            : getDefaultValueForKey(idx + 1);
           return { type: 'text', text: val.toString() };
         });
       } else if (expectedParamCount > 0) {
