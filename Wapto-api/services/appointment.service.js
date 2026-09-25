@@ -451,6 +451,68 @@ class AppointmentService {
         }
       }
 
+      const templateComponents = [];
+
+      let headerFormat = 'none';
+      let mediaType = null;
+      if (templateDoc.header) {
+        const fmt = String(templateDoc.header.format || '').toLowerCase();
+        if (fmt === 'text') {
+          headerFormat = 'text';
+        } else if (['image', 'video', 'document'].includes(fmt)) {
+          headerFormat = fmt;
+          mediaType = fmt;
+        } else if (fmt === 'media') {
+          const mType = String(templateDoc.header.media_type || 'image').toLowerCase();
+          if (['image', 'video', 'document'].includes(mType)) {
+            headerFormat = mType;
+            mediaType = mType;
+          }
+        }
+      }
+
+      console.log(`[appointment_service] Template metadata for "${templateDoc.template_name}": headerFormat=${headerFormat}, expectedBodyParams=${expectedParamCount}`);
+
+      if (['image', 'video', 'document'].includes(headerFormat)) {
+        const mediaUrl =
+          config.header_media_url ||
+          config.media_url ||
+          templateDoc.header?.media_url ||
+          templateDoc.header?.handle ||
+          variables.header_media_url ||
+          variables.media_url ||
+          variables['header_url'] ||
+          booking.header_media_url ||
+          booking.media_url;
+
+        if (!mediaUrl || typeof mediaUrl !== 'string' || mediaUrl.trim() === '') {
+          console.error(
+            `[appointment_service] Missing required ${headerFormat.toUpperCase()} header media URL for template "${templateDoc.template_name}". Aborting send.`
+          );
+          return;
+        }
+
+        templateComponents.push({
+          type: 'header',
+          parameters: [{
+            type: mediaType,
+            [mediaType]: { link: mediaUrl.trim() }
+          }]
+        });
+      } else if (headerFormat === 'text' && templateDoc.header?.text) {
+        const matches = templateDoc.header.text.match(/\{\{\d+\}\}/g);
+        if (matches && matches.length > 0) {
+          const headerParams = matches.map((_, idx) => {
+            const val = variables[`header_${idx + 1}`] || variables[`header`] || config.name || contact.name || 'Guest';
+            return { type: 'text', text: String(val) };
+          });
+          templateComponents.push({
+            type: 'header',
+            parameters: headerParams
+          });
+        }
+      }
+
       let parameters = [];
       if (Array.isArray(templateDoc.body_variables) && templateDoc.body_variables.length > 0) {
         parameters = templateDoc.body_variables.map((bv, idx) => {
@@ -477,10 +539,47 @@ class AppointmentService {
         return;
       }
 
-      const templateComponents = expectedParamCount > 0 ? [{
-        type: 'body',
-        parameters
-      }] : [];
+      if (expectedParamCount > 0) {
+        templateComponents.push({
+          type: 'body',
+          parameters
+        });
+      }
+
+      if (Array.isArray(templateDoc.buttons)) {
+        templateDoc.buttons.forEach((btn, btnIndex) => {
+          if (btn.type === 'url' && typeof btn.url === 'string' && btn.url.includes('{{')) {
+            const urlVal =
+              variables.url ||
+              variables.payment_link ||
+              booking.payment_link ||
+              booking.google_meet_link ||
+              'https://whatypie.com';
+            templateComponents.push({
+              type: 'button',
+              sub_type: 'url',
+              index: String(btnIndex),
+              parameters: [{ type: 'text', text: String(urlVal) }]
+            });
+          } else if (btn.type === 'quick_reply') {
+            const payloadVal = btn.payload || btn.text || `reply_${btnIndex}`;
+            templateComponents.push({
+              type: 'button',
+              sub_type: 'quick_reply',
+              index: String(btnIndex),
+              parameters: [{ type: 'payload', payload: String(payloadVal) }]
+            });
+          } else if (btn.type === 'copy_code' && (config.coupon_code || templateDoc.coupon_code)) {
+            const codeVal = config.coupon_code || templateDoc.coupon_code;
+            templateComponents.push({
+              type: 'button',
+              sub_type: 'copy_code',
+              index: String(btnIndex),
+              parameters: [{ type: 'coupon_code', coupon_code: String(codeVal) }]
+            });
+          }
+        });
+      }
 
       await unifiedWhatsAppService.sendMessage(userId, {
         recipientNumber: contact.phone_number,
