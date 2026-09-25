@@ -1191,6 +1191,17 @@ const extractVariablesFromComponents = (components) => {
   }));
 };
 
+export const isTemporaryWhatsAppCdnUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  const lower = url.toLowerCase();
+  return (
+    lower.includes('scontent.whatsapp.net') ||
+    lower.includes('fbcdn.net') ||
+    lower.includes('lookaside.fbsbx.com') ||
+    (lower.includes('facebook.com') && lower.includes('cdn'))
+  );
+};
+
 const extractHeader = (components) => {
   const headerComponent = findComponent(components, "HEADER");
   if (!headerComponent) return null;
@@ -1205,13 +1216,27 @@ const extractHeader = (components) => {
 
   if (["IMAGE", "VIDEO", "DOCUMENT"].includes(format)) {
     const example = headerComponent.example || {};
-    const handle = example.header_handle?.[0] || example.header_handle;
-    const url = example.header_url;
+    const rawHandle = example.header_handle?.[0] || example.header_handle;
+    const rawUrl = example.header_url;
+
+    let media_url = null;
+    let media_id = null;
+
+    if (rawHandle && typeof rawHandle === 'string' && /^\d+$/.test(rawHandle.trim())) {
+      media_id = rawHandle.trim();
+    }
+
+    const candidateUrl = rawUrl || (rawHandle && typeof rawHandle === 'string' && (rawHandle.startsWith("http://") || rawHandle.startsWith("https://")) ? rawHandle : null);
+    if (candidateUrl && !isTemporaryWhatsAppCdnUrl(candidateUrl)) {
+      media_url = candidateUrl;
+    }
+
     return {
       format: "media",
       media_type: format.toLowerCase(),
-      media_url: url || (handle ? String(handle) : null),
-      handle: handle || undefined,
+      media_url: media_url,
+      media_id: media_id,
+      handle: rawHandle || undefined,
     };
   }
 

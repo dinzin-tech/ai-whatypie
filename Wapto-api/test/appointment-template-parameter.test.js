@@ -1,6 +1,17 @@
 import assert from 'node:assert';
 import test from 'node:test';
 
+function isTemporaryWhatsAppCdnUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  const lower = url.toLowerCase();
+  return (
+    lower.includes('scontent.whatsapp.net') ||
+    lower.includes('fbcdn.net') ||
+    lower.includes('lookaside.fbsbx.com') ||
+    (lower.includes('facebook.com') && lower.includes('cdn'))
+  );
+}
+
 // Helper mimicking full sendAppointmentTemplate component builder logic
 function buildAppointmentTemplateComponents(templateDoc, config, contact, booking, customMappings = {}, explicitVariables = null) {
   let expectedBodyParamCount = 0;
@@ -77,28 +88,54 @@ function buildAppointmentTemplateComponents(templateDoc, config, contact, bookin
   }
 
   if (['image', 'video', 'document'].includes(headerFormat)) {
-    const mediaUrl =
-      config.header_media_url ||
-      config.media_url ||
-      templateDoc.header?.media_url ||
-      templateDoc.header?.handle ||
-      variables.header_media_url ||
-      variables.media_url ||
-      variables['header_url'] ||
-      booking.header_media_url ||
-      booking.media_url;
+    const isMediaId = (val) => Boolean(val && typeof val === 'string' && /^\d+$/.test(val.trim()));
 
-    if (!mediaUrl || typeof mediaUrl !== 'string' || mediaUrl.trim() === '') {
-      throw new Error(`[appointment_service] Missing required ${headerFormat.toUpperCase()} header media URL for template "${templateDoc.template_name}". Aborting send.`);
+    const mediaId =
+      (isMediaId(config.header_media_id) && config.header_media_id.trim()) ||
+      (isMediaId(templateDoc.header?.media_id) && templateDoc.header.media_id.trim()) ||
+      (isMediaId(variables.header_media_id) && variables.header_media_id.trim());
+
+    const urlCandidates = [
+      config.header_media_url,
+      config.media_url,
+      variables.header_media_url,
+      variables.media_url,
+      variables['header_url'],
+      booking.header_media_url,
+      booking.media_url,
+      templateDoc.header?.media_url
+    ];
+
+    let validPublicUrl = null;
+    for (const candidate of urlCandidates) {
+      if (candidate && typeof candidate === 'string' && candidate.trim() !== '') {
+        const trimmed = candidate.trim();
+        if ((trimmed.startsWith('http://') || trimmed.startsWith('https://')) && !isTemporaryWhatsAppCdnUrl(trimmed)) {
+          validPublicUrl = trimmed;
+          break;
+        }
+      }
     }
 
-    templateComponents.push({
-      type: 'header',
-      parameters: [{
-        type: mediaType,
-        [mediaType]: { link: mediaUrl.trim() }
-      }]
-    });
+    if (mediaId) {
+      templateComponents.push({
+        type: 'header',
+        parameters: [{
+          type: mediaType,
+          [mediaType]: { id: mediaId }
+        }]
+      });
+    } else if (validPublicUrl) {
+      templateComponents.push({
+        type: 'header',
+        parameters: [{
+          type: mediaType,
+          [mediaType]: { link: validPublicUrl }
+        }]
+      });
+    } else {
+      throw new Error(`[appointment_service] Missing valid required ${headerFormat.toUpperCase()} header media asset for template "${templateDoc.template_name}". Temporary WhatsApp CDN URLs cannot be used as outbound links. Aborting send.`);
+    }
   } else if (headerFormat === 'text' && templateDoc.header?.text) {
     const matches = templateDoc.header.text.match(/\{\{\d+\}\}/g);
     if (matches && matches.length > 0) {
@@ -299,7 +336,7 @@ test('9. Missing required IMAGE header media -> aborts before Meta API call', ()
   };
   assert.throws(() => {
     buildAppointmentTemplateComponents(doc, {}, { name: 'Test' }, {});
-  }, /Missing required IMAGE header media URL/);
+  }, /Missing valid required IMAGE header media asset/);
 });
 
 test('10. Missing required body variable / mismatch -> aborts before Meta API call', () => {
@@ -389,11 +426,8 @@ test('16. success_template_id configured -> controller does NOT call sendAppoint
   let textFallbackCount = 0;
   const config = { success_template_id: 'temp123' };
 
-  // Controller deduplicated logic:
   if (!config.success_template_id) {
     textFallbackCount++;
-  } else {
-    // No redundant call to sendAppointmentTemplate
   }
 
   assert.strictEqual(controllerTemplateSendCount, 0);
@@ -405,12 +439,10 @@ test('17. success_template_id missing -> fallback plain-text message is sent exa
   let textFallbackCount = 0;
   const config = { success_template_id: null };
 
-  // createBooking logic:
   if (config.success_template_id) {
     serviceTemplateSendCount++;
   }
 
-  // Controller logic:
   if (!config.success_template_id) {
     textFallbackCount++;
   }
@@ -425,7 +457,6 @@ test('18. Booking creation failure -> no success template is dispatched', () => 
 
   try {
     throw new Error('Database error during booking creation');
-    // Code below not reached
     templateSendCount++;
   } catch (err) {
     errorCaught = true;
@@ -433,4 +464,69 @@ test('18. Booking creation failure -> no success template is dispatched', () => 
 
   assert.strictEqual(errorCaught, true);
   assert.strictEqual(templateSendCount, 0);
+});
+
+// Media Asset Lifecycle & CDN Rejection Tests:
+test('19. Stable Meta media ID is used when available', () => {
+  const doc = {
+    template_name: 'media_id_temp',
+    header: { format: 'media', media_type: 'image', media_id: '1234567890123' },
+    message_body: 'Hello {{1}}',
+    body_variables: [{ key: '1' }]
+  };
+  const res = buildAppointmentTemplateComponents(doc, {}, { name: 'Test' }, {});
+  const headerComp = res.templateComponents.find(c => c.type === 'header');
+  assert.ok(headerComp);
+  assert.strictEqual(headerComp.parameters[0].type, 'image');
+  assert.strictEqual(headerComp.parameters[0].image.id, '1234567890123');
+});
+
+test('20. Stable public HTTPS URL is used when valid and not a temporary CDN URL', () => {
+  const doc = {
+    template_name: 'public_url_temp',
+    header: { format: 'media', media_type: 'image', media_url: 'https://images.unsplash.com/photo-123.jpg' },
+    message_body: 'Hello {{1}}',
+    body_variables: [{ key: '1' }]
+  };
+  const res = buildAppointmentTemplateComponents(doc, {}, { name: 'Test' }, {});
+  const headerComp = res.templateComponents.find(c => c.type === 'header');
+  assert.ok(headerComp);
+  assert.strictEqual(headerComp.parameters[0].type, 'image');
+  assert.strictEqual(headerComp.parameters[0].image.link, 'https://images.unsplash.com/photo-123.jpg');
+});
+
+test('21. Temporary scontent.whatsapp.net URL is rejected as public link', () => {
+  const doc = {
+    template_name: 'yadav_tours_travel_offer',
+    header: { format: 'media', media_type: 'image', media_url: 'https://scontent.whatsapp.net/v/t61.29466-34/468840134_exp.jpg' },
+    message_body: 'Hello {{1}}',
+    body_variables: [{ key: '1' }]
+  };
+  assert.throws(() => {
+    buildAppointmentTemplateComponents(doc, {}, { name: 'Test' }, {});
+  }, /Temporary WhatsApp CDN URLs cannot be used as outbound links/);
+});
+
+test('22. Temporary fbcdn.net URL is rejected as public link', () => {
+  const doc = {
+    template_name: 'fbcdn_temp',
+    header: { format: 'media', media_type: 'image', media_url: 'https://cdn.fbcdn.net/v/t61.29466-34/123.jpg' },
+    message_body: 'Hello {{1}}',
+    body_variables: [{ key: '1' }]
+  };
+  assert.throws(() => {
+    buildAppointmentTemplateComponents(doc, {}, { name: 'Test' }, {});
+  }, /Temporary WhatsApp CDN URLs cannot be used as outbound links/);
+});
+
+test('23. Temporary lookaside.fbsbx.com URL is rejected as public link', () => {
+  const doc = {
+    template_name: 'fbsbx_temp',
+    header: { format: 'media', media_type: 'image', media_url: 'https://lookaside.fbsbx.com/file/123.jpg' },
+    message_body: 'Hello {{1}}',
+    body_variables: [{ key: '1' }]
+  };
+  assert.throws(() => {
+    buildAppointmentTemplateComponents(doc, {}, { name: 'Test' }, {});
+  }, /Temporary WhatsApp CDN URLs cannot be used as outbound links/);
 });

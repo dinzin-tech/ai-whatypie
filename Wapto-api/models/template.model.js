@@ -21,6 +21,7 @@ const HeaderSchema = new mongoose.Schema(
       enum: ["image", "video", "document"]
     },
     media_url: { type: String },
+    media_id: { type: String },
     handle: { type: String },
     original_filename: { type: String },
   },
