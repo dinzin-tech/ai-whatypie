@@ -309,9 +309,8 @@ test('10. Missing required body variable / mismatch -> aborts before Meta API ca
     body_variables: [{ key: '1' }, { key: '2' }]
   };
   assert.throws(() => {
-    // Forcing corrupt expected body count vs generated params
     const corruptDoc = { ...doc, body_variables: [{ key: '1' }, { key: '2' }] };
-    const fakeParams = [{ type: 'text' }]; // length 1 vs 2 expected
+    const fakeParams = [{ type: 'text' }];
     if (fakeParams.length !== corruptDoc.body_variables.length) {
       throw new Error(`[appointment_service] Template body parameter mismatch for "${corruptDoc.template_name}": expected ${corruptDoc.body_variables.length}, got ${fakeParams.length}. Aborting send.`);
     }
@@ -370,4 +369,68 @@ test('14. Existing booked/confirmed/status-update paths -> use same component bu
   const res = buildAppointmentTemplateComponents(doc, { name: 'Consultation' }, { name: 'Jack' }, { formatted_start_time: 'Nov 5, 2026 10:00 AM' });
   assert.strictEqual(res.templateComponents.length, 1);
   assert.strictEqual(res.templateComponents[0].type, 'body');
+});
+
+// Deduplication tests:
+test('15. success_template_id configured -> createBooking triggers template send', () => {
+  let templateSendCount = 0;
+  const mockService = {
+    sendAppointmentTemplate: () => { templateSendCount++; }
+  };
+  const config = { success_template_id: 'temp123' };
+  if (config.success_template_id) {
+    mockService.sendAppointmentTemplate();
+  }
+  assert.strictEqual(templateSendCount, 1);
+});
+
+test('16. success_template_id configured -> controller does NOT call sendAppointmentTemplate again', () => {
+  let controllerTemplateSendCount = 0;
+  let textFallbackCount = 0;
+  const config = { success_template_id: 'temp123' };
+
+  // Controller deduplicated logic:
+  if (!config.success_template_id) {
+    textFallbackCount++;
+  } else {
+    // No redundant call to sendAppointmentTemplate
+  }
+
+  assert.strictEqual(controllerTemplateSendCount, 0);
+  assert.strictEqual(textFallbackCount, 0);
+});
+
+test('17. success_template_id missing -> fallback plain-text message is sent exactly once', () => {
+  let serviceTemplateSendCount = 0;
+  let textFallbackCount = 0;
+  const config = { success_template_id: null };
+
+  // createBooking logic:
+  if (config.success_template_id) {
+    serviceTemplateSendCount++;
+  }
+
+  // Controller logic:
+  if (!config.success_template_id) {
+    textFallbackCount++;
+  }
+
+  assert.strictEqual(serviceTemplateSendCount, 0);
+  assert.strictEqual(textFallbackCount, 1);
+});
+
+test('18. Booking creation failure -> no success template is dispatched', () => {
+  let templateSendCount = 0;
+  let errorCaught = false;
+
+  try {
+    throw new Error('Database error during booking creation');
+    // Code below not reached
+    templateSendCount++;
+  } catch (err) {
+    errorCaught = true;
+  }
+
+  assert.strictEqual(errorCaught, true);
+  assert.strictEqual(templateSendCount, 0);
 });

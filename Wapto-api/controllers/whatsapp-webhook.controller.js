@@ -390,18 +390,9 @@ export const handleIncomingMessage = async (req, res, io = null) => {
             contactDoc.markModified('metadata');
             await contactDoc.save();
 
-            // If a success template is configured, send it
-            if (config.success_template_id) {
-              await appointmentService.sendAppointmentTemplate(
-                whatsappPhoneNumber.user_id,
-                contactDoc._id,
-                config.success_template_id,
-                booking,
-                'success',
-                whatsappPhoneNumber._id
-              );
-            } else {
-              // Fallback: send a friendly plain-text confirmation
+            // Note: success_template_id notification is handled inside appointmentService.createBooking()
+            if (!config.success_template_id) {
+              // Fallback: send a friendly plain-text confirmation if no template is configured
               const { default: unifiedWhatsAppService } = await import('../services/whatsapp/unified-whatsapp.service.js');
               const visitDate = moment(startTime).format('dddd, MMM D, YYYY');
               const visitTime = moment(startTime).format('h:mm A');
