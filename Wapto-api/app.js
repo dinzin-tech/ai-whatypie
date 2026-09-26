@@ -254,50 +254,69 @@ app.get("/short_link/wp/:code", redirectShortLink);
 
 app.get("/webhook/whatsapp", handleWebhookVerification);
 
-app.post("/webhook/whatsapp", (req, res) => {
-  const entry = req.body.entry?.[0];
-  const changes = entry?.changes?.[0];
-  const value = changes?.value;
+app.post("/webhook/whatsapp", async (req, res) => {
   const io = app.get("io");
-  const change = req.body.entry?.[0]?.changes?.[0];
-  const messages = change?.value?.messages;
+  const entries = req.body?.entry;
 
-  if (messages?.[0]?.errors) {
-    console.log("Message errors:", messages[0].errors);
+  if (!Array.isArray(entries) || entries.length === 0) {
+    console.log("Unknown or empty WhatsApp webhook payload:", req.body);
+    return res.sendStatus(200);
   }
 
-  if (value?.statuses) {
+  try {
+    for (const entry of entries) {
+      const changes = entry?.changes;
+      if (!Array.isArray(changes)) continue;
 
-    return handleStatusUpdateOriginal(req, res, io);
-  } else if (value?.messages) {
-    const message = value.messages[0];
-    if (message.type === 'call') {
-      import('./services/whatsapp/call-automation.service.js').then(m => {
-        m.default.handleIncomingCall(
-          message.call.id,
-          value.metadata.phone_number_id,
-          message.from
-        );
-      });
+      for (const change of changes) {
+        const value = change?.value;
+        if (!value) continue;
+
+        const messages = value.messages;
+        if (messages?.[0]?.errors) {
+          console.log("Message errors:", messages[0].errors);
+        }
+
+        if (Array.isArray(value.statuses) && value.statuses.length > 0) {
+          await handleStatusUpdateOriginal(req, res, io, change);
+        }
+
+        if (Array.isArray(value.messages) && value.messages.length > 0) {
+          const firstCallMsg = value.messages.find((m) => m.type === "call");
+          if (firstCallMsg) {
+            import("./services/whatsapp/call-automation.service.js").then((m) => {
+              m.default.handleIncomingCall(
+                firstCallMsg.call.id,
+                value.metadata?.phone_number_id,
+                firstCallMsg.from
+              );
+            });
+          }
+          await handleIncomingMessageOriginal(req, res, io, change);
+        } else if (change?.field === "calls") {
+          import("./services/whatsapp/call-automation.service.js").then((m) => {
+            const callData = value.calls?.[0];
+            console.log("callData", callData);
+
+            if (callData) {
+              m.default.handleCallWebhook(
+                callData,
+                value.metadata?.phone_number_id
+              );
+            }
+          });
+        }
+      }
+    }
+
+    if (!res.headersSent) {
       return res.sendStatus(200);
     }
-    return handleIncomingMessageOriginal(req, res, io);
-  } else if (changes?.field === 'calls') {
-    import('./services/whatsapp/call-automation.service.js').then(m => {
-      const callData = value.calls?.[0];
-      console.log("callData", callData);
-
-      if (callData) {
-        m.default.handleCallWebhook(
-          callData,
-          value.metadata.phone_number_id
-        );
-      }
-    });
-    return res.sendStatus(200);
-  } else {
-    console.log("Unknown WhatsApp webhook type:", req.body);
-    return res.sendStatus(200);
+  } catch (err) {
+    console.error("Error in webhook processing loop:", err);
+    if (!res.headersSent) {
+      return res.sendStatus(200);
+    }
   }
 });
 

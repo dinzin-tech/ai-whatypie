@@ -633,7 +633,7 @@ export default class BusinessAPIProvider extends BaseProvider {
       throw new Error('WhatsApp Business API connection not found');
     }
 
-    const myPhoneNumber = connection.display_phone_number || connection.display_phone_number;
+    const myPhoneNumber = connection.display_phone_number || connection.registred_phone_number;
 
     const contact = await Contact.findOne({
       phone_number: contactNumber,

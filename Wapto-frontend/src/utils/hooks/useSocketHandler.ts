@@ -18,6 +18,11 @@ import { whatsappApi } from "@/src/redux/api/whatsappApi";
 import { useGetWorkspacesQuery } from "@/src/redux/api/workspaceApi";
 import { setWorkspace } from "@/src/redux/reducers/workspaceSlice";
 
+export const normalizePhoneForComparison = (phone?: string | null): string => {
+  if (!phone) return "";
+  return String(phone).replace(/\D/g, "");
+};
+
 const groupNewMessage = (existingData: DateGroupedMessages[], newMessage: ChatMessage) => {
   let foundExisting = false;
 
@@ -25,6 +30,7 @@ const groupNewMessage = (existingData: DateGroupedMessages[], newMessage: ChatMe
     for (const group of dateGroup.messageGroups) {
       const idx = group.messages.findIndex((m) => {
         if (m.id === newMessage.id) return true;
+        if ((m as any).wa_message_id && (newMessage as any).wa_message_id && (m as any).wa_message_id === (newMessage as any).wa_message_id) return true;
 
         const isTypeMatch = m.messageType === newMessage.messageType || (m.messageType === "payment_link" && newMessage.messageType === "text");
 
@@ -138,12 +144,22 @@ export const useSocketHandler = () => {
     (newMessage: ChatMessage) => {
       if (!selectedChat || !selectedPhoneNumberId) return;
 
-      const activeContactId = String(selectedChat.contact.id);
-      const activeContactNumber = String(selectedChat.contact.number);
-      const msgSenderId = String(newMessage.sender.id);
-      const msgRecipientId = String(newMessage.recipient.id);
+      const activeContactId = selectedChat.contact?.id ? String(selectedChat.contact.id) : null;
+      const activeContactNumberNorm = selectedChat.contact?.number ? normalizePhoneForComparison(selectedChat.contact.number) : "";
 
-      const isRelevant = msgSenderId === activeContactId || msgRecipientId === activeContactId || msgSenderId === activeContactNumber || msgRecipientId === activeContactNumber;
+      const msgContactId = (newMessage as any).contact_id || (newMessage.sender as any)?.contact_id ? String((newMessage as any).contact_id || (newMessage.sender as any)?.contact_id) : null;
+      const msgSenderId = String(newMessage.sender.id);
+      const msgSenderPhoneNorm = normalizePhoneForComparison(newMessage.sender.id);
+
+      const msgRecipientId = String(newMessage.recipient.id);
+      const msgRecipientPhoneNorm = normalizePhoneForComparison(newMessage.recipient.id);
+
+      const isRelevant =
+        (msgContactId && activeContactId && msgContactId === activeContactId) ||
+        (msgSenderId === activeContactId) ||
+        (msgRecipientId === activeContactId) ||
+        (msgSenderPhoneNorm && activeContactNumberNorm && msgSenderPhoneNorm === activeContactNumberNorm) ||
+        (msgRecipientPhoneNorm && activeContactNumberNorm && msgRecipientPhoneNorm === activeContactNumberNorm);
 
       if (!isRelevant) return;
 
@@ -200,8 +216,18 @@ export const useSocketHandler = () => {
           chatApi.util.updateQueryData("getRecentChats", params as any, (draft) => {
             if (!draft || !draft.data) return;
 
+            const targetContactId = (newMessage as any).contact_id || (newMessage.sender as any)?.contact_id ? String((newMessage as any).contact_id || (newMessage.sender as any)?.contact_id) : null;
             const targetIdentifier = newMessage.direction === "inbound" ? String(newMessage.sender.id) : String(newMessage.recipient.id);
-            const chatIndex = draft.data.findIndex((c) => String(c.contact.id) === targetIdentifier || String(c.contact.number) === targetIdentifier);
+            const targetPhoneNorm = normalizePhoneForComparison(targetIdentifier);
+
+            const chatIndex = draft.data.findIndex((c) => {
+              const cContactId = c.contact?.id ? String(c.contact.id) : null;
+              const cContactPhoneNorm = c.contact?.number ? normalizePhoneForComparison(c.contact.number) : "";
+              if (targetContactId && cContactId && targetContactId === cContactId) return true;
+              if (String(c.contact.id) === targetIdentifier || String(c.contact.number) === targetIdentifier) return true;
+              if (targetPhoneNorm && cContactPhoneNorm && targetPhoneNorm === cContactPhoneNorm) return true;
+              return false;
+            });
 
             if (chatIndex !== -1) {
               foundInCache = true;
