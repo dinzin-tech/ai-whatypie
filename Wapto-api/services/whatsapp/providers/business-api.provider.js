@@ -14,6 +14,8 @@ import {
   getWhatsAppAudioUploadMime,
   isLikelyChatVoiceNote
 } from '../../../utils/whatsapp-voice-mime.js';
+import { normalizeStoredPhone } from '../../../utils/phone-normalization.js';
+
 
 const WHATSAPP_API_VERSION = 'v22.0';
 const WHATSAPP_GRAPH_API_APP_URL = 'https://graph.facebook.com';
@@ -755,15 +757,28 @@ export default class BusinessAPIProvider extends BaseProvider {
     }
 
     const myPhoneNumber = connection.registred_phone_number;
+    const normReg = normalizeStoredPhone(connection.registred_phone_number);
+    const normDisp = normalizeStoredPhone(connection.display_phone_number);
+
+    const myPhoneVariants = [
+      ...new Set([
+        myPhoneNumber,
+        connection.display_phone_number,
+        normReg,
+        normReg ? '+' + normReg : null,
+        normDisp,
+        normDisp ? '+' + normDisp : null
+      ].filter(Boolean))
+    ];
 
     const sentMessages = await Message.distinct('recipient_number', {
-      sender_number: myPhoneNumber,
+      sender_number: { $in: myPhoneVariants },
       recipient_number: { $ne: null },
       deleted_at: null
     });
 
     const receivedMessages = await Message.distinct('sender_number', {
-      recipient_number: myPhoneNumber,
+      recipient_number: { $in: myPhoneVariants },
       sender_number: { $ne: null },
       deleted_at: null
     });
@@ -773,20 +788,29 @@ export default class BusinessAPIProvider extends BaseProvider {
         ...sentMessages.filter(Boolean),
         ...receivedMessages.filter(Boolean)
       ])
-    ].filter(number => number && number !== myPhoneNumber);
+    ].filter(number => number && !myPhoneVariants.includes(number));
 
     const recentChats = await Promise.all(
       allContactNumbers.map(async (contactNumber) => {
+        const normContact = normalizeStoredPhone(contactNumber);
+        const contactVariants = [
+          ...new Set([
+            contactNumber,
+            normContact,
+            normContact ? '+' + normContact : null
+          ].filter(Boolean))
+        ];
+
         const lastMessage = await Message.findOne({
           $or: [
             {
-              sender_number: myPhoneNumber,
-              recipient_number: contactNumber,
+              sender_number: { $in: myPhoneVariants },
+              recipient_number: { $in: contactVariants },
               deleted_at: null
             },
             {
-              sender_number: contactNumber,
-              recipient_number: myPhoneNumber,
+              sender_number: { $in: contactVariants },
+              recipient_number: { $in: myPhoneVariants },
               deleted_at: null
             }
           ]

@@ -8,6 +8,8 @@ import { assignChatToAgent as assignChatToAgentFromChat } from './chat.controlle
 import paymentLinkService from '../services/payment-link.service.js';
 import { subscribeWabaToWebhooks } from '../services/whatsapp/waba-subscription.service.js';
 import mongoose from 'mongoose';
+import { normalizeStoredPhone } from '../utils/phone-normalization.js';
+
 
 const processedAuthCodes = new Set();
 
@@ -1108,17 +1110,34 @@ export const getRecentChats = async (req, res) => {
       .lean();
 
     const contactMap = userContacts.reduce((acc, contact) => {
-      acc[contact.phone_number] = {
+      const entry = {
         id: contact._id.toString(),
         name: contact.name,
         chat_status: contact.chat_status || 'open',
         is_pinned: contact.is_pinned === true
       };
+      if (contact.phone_number) {
+        acc[contact.phone_number] = entry;
+        const normalized = normalizeStoredPhone(contact.phone_number);
+        if (normalized) {
+          acc[normalized] = entry;
+          acc['+' + normalized] = entry;
+        }
+      }
       return acc;
     }, {});
 
+    const getContactInfo = (numberStr) => {
+      if (!numberStr) return null;
+      if (contactMap[numberStr]) return contactMap[numberStr];
+      const norm = normalizeStoredPhone(numberStr);
+      if (norm && contactMap[norm]) return contactMap[norm];
+      if (norm && contactMap['+' + norm]) return contactMap['+' + norm];
+      return null;
+    };
+
     const contactIdsInChats = filteredChats
-      .map(c => contactMap[c.contact.number]?.id)
+      .map(c => getContactInfo(c.contact.number)?.id)
       .filter(Boolean);
 
     const labelsFromContactTags = contactIdsInChats.length > 0
@@ -1201,7 +1220,7 @@ export const getRecentChats = async (req, res) => {
 
     if (myPhoneNumber) {
       filteredChats = filteredChats.map(chat => {
-        const contactInfo = contactMap[chat.contact.number] || {
+        const contactInfo = getContactInfo(chat.contact.number) || {
           id: null,
           name: chat.contact.number,
           is_pinned: false
@@ -1225,7 +1244,7 @@ export const getRecentChats = async (req, res) => {
       });
     } else {
       filteredChats = filteredChats.map(chat => {
-        const contactInfo = contactMap[chat.contact.number] || {
+        const contactInfo = getContactInfo(chat.contact.number) || {
           id: null,
           name: chat.contact.number,
           is_pinned: false

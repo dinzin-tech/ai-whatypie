@@ -5,6 +5,8 @@ import { PROVIDER_TYPES } from '../services/whatsapp/unified-whatsapp.service.js
 import appointmentService from '../services/appointment.service.js';
 import automationCache from './automation-cache.js';
 import { v4 as uuidv4 } from 'uuid';
+import { normalizeStoredPhone } from './phone-normalization.js';
+
 
 class AutomationEngine {
   constructor() {
@@ -140,10 +142,32 @@ class AutomationEngine {
       const messageTriggers = triggers.filter((t, i, arr) => t.event_type === 'message_received' && arr.findIndex(tt => String(tt.flow_id) === String(t.flow_id) && tt.event_type === 'message_received') === i);
       console.log(`Found ${messageTriggers.length} message received triggers`);
 
+      const phoneDigits = normalizeStoredPhone(senderNumber);
+      const phoneVariants = [
+        ...new Set([
+          senderNumber,
+          phoneDigits,
+          phoneDigits ? '+' + phoneDigits : null
+        ].filter(Boolean))
+      ];
+
+      const waitingOrConditions = [
+        { contact_identifier: { $in: phoneVariants } },
+        { 'input_data.senderNumber': { $in: phoneVariants } }
+      ];
+
+      const resolvedContactId = (contact?._id || eventData.contactId)?.toString?.();
+      if (resolvedContactId) {
+        waitingOrConditions.unshift(
+          { 'input_data.contactId': resolvedContactId },
+          { 'input_data.contact._id': resolvedContactId }
+        );
+      }
+
       const waitingExecution = await AutomationExecution.findOne({
-        contact_identifier: senderNumber,
+        user_id: userId,
         status: 'waiting',
-        user_id: userId
+        $or: waitingOrConditions
       }).sort({ updated_at: -1 });
 
       if (waitingExecution) {
@@ -608,11 +632,27 @@ class AutomationEngine {
         return !fieldValue || fieldValue === '';
       case 'is_not_empty':
         return !!fieldValue && fieldValue !== '';
-      case 'contains_any':
-        if (!Array.isArray(value)) {
-          return false;
-        }
-        return value.some(v => strField.includes(String(v).toLowerCase()));
+      case 'contains_any': {
+        const valList = Array.isArray(value)
+          ? value.map(v => String(v ?? '').trim()).filter(Boolean)
+          : typeof value === 'string'
+            ? value.split(',').map(v => v.trim()).filter(Boolean)
+            : [String(value ?? '').trim()].filter(Boolean);
+
+        if (valList.length === 0) return false;
+        return valList.some(v => strField.includes(v.toLowerCase()));
+      }
+      case 'equals_any': {
+        const valList = Array.isArray(value)
+          ? value.map(v => String(v ?? '').trim()).filter(Boolean)
+          : typeof value === 'string'
+            ? value.split(',').map(v => v.trim()).filter(Boolean)
+            : [String(value ?? '').trim()].filter(Boolean);
+
+        if (valList.length === 0) return false;
+        const trimmedFieldLower = strField.trim();
+        return valList.some(v => trimmedFieldLower === v.toLowerCase());
+      }
       default:
         return true;
     }
