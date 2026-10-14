@@ -1,0 +1,80 @@
+name: Deploy WhatyPie to GCP Production
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+    inputs:
+      deploy_method:
+        description: 'Deployment execution method (ssh or self-hosted)'
+        required: true
+        default: 'ssh'
+        type: choice
+        options:
+          - 'ssh'
+          - 'self-hosted'
+      target_branch:
+        description: 'Branch to deploy'
+        required: false
+        default: 'master'
+
+concurrency:
+  group: whatypie-production-deployment
+  cancel-in-progress: false
+
+jobs:
+  # ============================================================================
+  # Method 1: Deploy via SSH (GitHub-hosted runner connects remotely to GCP VM)
+  # ============================================================================
+  deploy-via-ssh:
+    name: Deploy via SSH (GCP VM)
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_method == 'ssh') ||
+      (github.event_name == 'push' && (vars.DEPLOY_METHOD != 'self-hosted'))
+    steps:
+      - name: Deploy remotely via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.GCP_VM_HOST }}
+          username: ${{ secrets.GCP_VM_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.GCP_VM_PORT || 22 }}
+          script_stop: true
+          envs: TARGET_BRANCH
+          script: |
+            TARGET_BRANCH="${{ github.event.inputs.target_branch || github.ref_name || 'master' }}"
+            echo ">>> Executing deployment for branch: $TARGET_BRANCH"
+            sudo chown -R $(whoami):www-data /var/www/whatypie 2>/dev/null || true
+            sudo chmod -R u+rwX,g+rX /var/www/whatypie 2>/dev/null || true
+            cd /var/www/whatypie
+            git reset --hard HEAD
+            git fetch origin "$TARGET_BRANCH"
+            git checkout -f "$TARGET_BRANCH"
+            git reset --hard "origin/$TARGET_BRANCH"
+            chmod +x /var/www/whatypie/ops/deploy.sh 2>/dev/null || true
+            bash /var/www/whatypie/ops/deploy.sh "$TARGET_BRANCH"
+
+  # ============================================================================
+  # Method 2: Deploy via Self-Hosted Runner (Runs directly on GCP VM)
+  # ============================================================================
+  deploy-via-self-hosted:
+    name: Deploy via Self-Hosted Runner (Local on GCP VM)
+    runs-on: self-hosted
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_method == 'self-hosted') ||
+      (github.event_name == 'push' && vars.DEPLOY_METHOD == 'self-hosted')
+    steps:
+      - name: Trigger deployment locally on server
+        run: |
+          TARGET_BRANCH="${{ github.event.inputs.target_branch || github.ref_name || 'master' }}"
+          echo ">>> Executing local deployment on GCP runner for branch: $TARGET_BRANCH"
+          sudo chown -R $(whoami):www-data /var/www/whatypie 2>/dev/null || true
+          sudo chmod -R u+rwX,g+rX /var/www/whatypie 2>/dev/null || true
+          cd /var/www/whatypie
+          git reset --hard HEAD
+          git fetch origin "$TARGET_BRANCH"
+          git checkout -f "$TARGET_BRANCH"
+          git reset --hard "origin/$TARGET_BRANCH"
+          chmod +x /var/www/whatypie/ops/deploy.sh 2>/dev/null || true
+          bash /var/www/whatypie/ops/deploy.sh "$TARGET_BRANCH"

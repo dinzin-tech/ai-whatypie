@@ -1,0 +1,2 @@
+# Passwordless sudo rights for deployment runner and web server maintenance
+runner ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload nginx, /usr/bin/systemctl restart nginx, /usr/bin/nginx -t, /usr/bin/certbot, /usr/bin/cp * /etc/nginx/sites-available/*, /usr/bin/chown -R * /var/www/whatypie*, /usr/bin/chmod -R * /var/www/whatypie*
