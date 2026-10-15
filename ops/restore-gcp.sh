@@ -81,16 +81,28 @@ echo ">>> [3/5] Restoring MongoDB database..."
 DB_DUMP="$EXTRACTED_SUBDIR/database/mongodb_dump.archive.gz"
 if [ -f "$DB_DUMP" ]; then
     MONGO_URI=""
-    if [ -f "$APP_DIR/Wapto-api/.env" ]; then
+    FORCE_LOCAL_MONGO="${FORCE_LOCAL_MONGO:-false}"
+    if [ "$FORCE_LOCAL_MONGO" != "true" ] && [ -f "$APP_DIR/Wapto-api/.env" ]; then
         MONGO_URI=$(grep -E '^\s*(MONGODB_URI|MONGO_URI)=' "$APP_DIR/Wapto-api/.env" | head -n 1 | cut -d '=' -f2- | tr -d ' "\r\47' || true)
     fi
 
     if command -v mongorestore &>/dev/null; then
-        if [ -n "$MONGO_URI" ]; then
+        if [ -n "$MONGO_URI" ] && [ "$FORCE_LOCAL_MONGO" != "true" ]; then
             echo "  - Restoring to MongoDB using URI: ${MONGO_URI%/*}/..."
-            mongorestore --uri="$MONGO_URI" --gzip --archive="$DB_DUMP" --drop
+            if ! mongorestore --uri="$MONGO_URI" --gzip --archive="$DB_DUMP" --drop; then
+                echo "------------------------------------------------------------------------"
+                echo "ERROR: Failed to connect or restore to remote MongoDB Atlas!"
+                echo "Probable cause: Your GCP VM IP is not whitelisted in MongoDB Atlas Network Access."
+                echo "To fix:"
+                echo "  1. Add your GCP VM external IP to MongoDB Atlas Network Access whitelist,"
+                echo "     OR"
+                echo "  2. To restore into the local MongoDB on this VM instead, run:"
+                echo "     sudo FORCE_LOCAL_MONGO=true bash ops/restore-gcp.sh $BACKUP_TARBALL"
+                echo "------------------------------------------------------------------------"
+                exit 1
+            fi
         else
-            echo "  - Restoring to local default MongoDB instance (127.0.0.1:27017)..."
+            echo "  - Restoring to local MongoDB instance (127.0.0.1:27017)..."
             mongorestore --gzip --archive="$DB_DUMP" --drop
         fi
         echo "  - MongoDB database restored successfully!"
