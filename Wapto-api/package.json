@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "nodemon server.js",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
     "migrate-whatsapp": "node utils/migrate-whatsapp-structure.js",
     "migrate-waba-webhooks": "node utils/migrate-waba-webhook-subscriptions.js",
     "seed": "node seeder/index.js"

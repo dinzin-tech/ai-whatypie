@@ -162,9 +162,9 @@ def main():
     adm_domain = args.admin_domain or env_domains["admin"] or "admin.yourdomain.com"
 
     domain_map = [
-        {"domain": api_domain, "proxy": "http://127.0.0.1:5000", "webroot": f"{args.app_dir}/Wapto-api/public", "is_api": True},
-        {"domain": fe_domain, "proxy": "http://127.0.0.1:3000", "webroot": f"{args.app_dir}/Wapto-frontend/public", "is_api": False},
-        {"domain": adm_domain, "proxy": "http://127.0.0.1:3001", "webroot": f"{args.app_dir}/Wapto-admin/public", "is_api": False},
+        {"domain": api_domain, "proxy": "http://127.0.0.1:5000", "webroot": "/var/www/certbot", "is_api": True},
+        {"domain": fe_domain, "proxy": "http://127.0.0.1:3000", "webroot": "/var/www/certbot", "is_api": False},
+        {"domain": adm_domain, "proxy": "http://127.0.0.1:3001", "webroot": "/var/www/certbot", "is_api": False},
     ]
 
     # Check SSL availability

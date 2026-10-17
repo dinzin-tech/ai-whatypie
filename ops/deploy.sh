@@ -61,21 +61,32 @@ else
 fi
 npm run build
 
+# Validate or auto-generate NEXTAUTH_SECRET if missing in frontend
+if [ -f "$APP_DIR/Wapto-frontend/.env" ]; then
+    if ! grep -q "NEXTAUTH_SECRET=" "$APP_DIR/Wapto-frontend/.env" 2>/dev/null; then
+        GENERATED_SECRET=$(head -c 32 /dev/urandom 2>/dev/null | base64 | tr -dc 'A-Za-z0-9' | head -c 32 || echo "secret_$(date +%s)")
+        echo "NEXTAUTH_SECRET=\"$GENERATED_SECRET\"" >> "$APP_DIR/Wapto-frontend/.env"
+        echo "  - Added auto-generated NEXTAUTH_SECRET to Wapto-frontend/.env"
+    fi
+fi
+
 echo ">>> [5/7] Managing PM2 processes..."
 cd "$APP_DIR"
-# If PM2 ecosystem is already running, reload it; otherwise start it
-if pm2 describe whatypie-api >/dev/null 2>&1; then
-    echo "  - Reloading existing PM2 cluster..."
-    pm2 reload ops/ecosystem.config.cjs --update-env
-else
-    echo "  - Starting PM2 ecosystem..."
-    pm2 start ops/ecosystem.config.cjs
-fi
+# Ensure PM2 ecosystem is started or restarted with clean updated environment
+pm2 startOrRestart ops/ecosystem.config.cjs --update-env
 pm2 save
+sleep 4
+echo ">>> Current PM2 Process Status:"
+pm2 status
 
 echo ">>> [6/7] Configuring Nginx reverse proxy & automated SSL..."
 TARGET_CONF="/etc/nginx/sites-available/whatypie.conf"
 TMP_CONF=$(mktemp)
+
+# Prepare shared ACME challenge directory
+$SUDO mkdir -p /var/www/certbot
+$SUDO chown -R www-data:www-data /var/www/certbot
+$SUDO chmod -R 755 /var/www/certbot
 
 if [ -f "$APP_DIR/ops/nginx/render-config.py" ] && [ -d /etc/nginx/sites-available ]; then
     # Generate initial HTTP config
@@ -96,14 +107,14 @@ if [ -f "$APP_DIR/ops/nginx/render-config.py" ] && [ -d /etc/nginx/sites-availab
         $SUDO systemctl reload nginx
     fi
 
-    # Check Let's Encrypt certificates if real domains are set
+    # Check Let's Encrypt certificates using shared /var/www/certbot webroot
     if command -v certbot >/dev/null 2>&1; then
         for DOMAIN in "$API_DOMAIN" "$FRONTEND_DOMAIN" "$ADMIN_DOMAIN"; do
             if [ -n "$DOMAIN" ] && [ "$DOMAIN" != "localhost" ] && [ "$DOMAIN" != "127.0.0.1" ] && [[ ! "$DOMAIN" =~ \.local$ ]] && [[ ! "$DOMAIN" =~ yourdomain\.com ]]; then
                 CERT_FILE="/etc/letsencrypt/live/$DOMAIN/fullchain.pem"
                 if ! $SUDO test -f "$CERT_FILE" 2>/dev/null; then
-                    echo ">>> Requesting Let's Encrypt SSL certificate for $DOMAIN..."
-                    $SUDO certbot certonly --webroot -w "$APP_DIR/Wapto-api/public" -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email || true
+                    echo ">>> Requesting Let's Encrypt SSL certificate for $DOMAIN via /var/www/certbot..."
+                    $SUDO certbot certonly --webroot -w /var/www/certbot -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email || true
                 fi
             fi
         done
@@ -129,19 +140,34 @@ if [ -d "$APP_DIR/Wapto-api/storage" ]; then
 fi
 
 echo ">>> [7/7] Verifying health checks..."
-sleep 3
+sleep 5
 
 # Verify API backend
-API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5000/ || echo "failed")
+API_STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" http://127.0.0.1:5000/ || echo "000")
 echo "  - API Backend (:5000) Health: HTTP $API_STATUS"
 
 # Verify Tenant Frontend
-FE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/ || echo "failed")
+FE_STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/ || echo "000")
 echo "  - Tenant Frontend (:3000) Health: HTTP $FE_STATUS"
 
 # Verify Super Admin
-ADMIN_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3001/ || echo "failed")
+ADMIN_STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" http://127.0.0.1:3001/ || echo "000")
 echo "  - Super Admin (:3001) Health: HTTP $ADMIN_STATUS"
+
+# Diagnostic inspection if health check indicates failure
+if [ "$API_STATUS" = "000" ] || [ "$API_STATUS" = "failed" ]; then
+    echo "------------------------------------------------------------------------"
+    echo "DIAGNOSTIC: API Backend (:5000) is down! Showing last 20 lines of PM2 log:"
+    pm2 logs whatypie-api --lines 20 --nostream || true
+    echo "------------------------------------------------------------------------"
+fi
+
+if [ "$FE_STATUS" = "500" ]; then
+    echo "------------------------------------------------------------------------"
+    echo "DIAGNOSTIC: Tenant Frontend (:3000) returned HTTP 500! Showing last 20 lines of PM2 log:"
+    pm2 logs whatypie-frontend --lines 20 --nostream || true
+    echo "------------------------------------------------------------------------"
+fi
 
 echo "========================================================================"
 echo ">>> WhatyPie deployment finished successfully!"
