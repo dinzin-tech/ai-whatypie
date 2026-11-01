@@ -8,7 +8,11 @@ set -euo pipefail
 export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
 
 APP_DIR="${APP_DIR:-/var/www/whatypie}"
-TARGET_BRANCH="${1:-master}"
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "release")
+if [ "$CURRENT_BRANCH" = "HEAD" ] || [ -z "$CURRENT_BRANCH" ]; then
+    CURRENT_BRANCH="release"
+fi
+TARGET_BRANCH="${1:-$CURRENT_BRANCH}"
 
 echo "========================================================================"
 echo ">>> Starting WhatyPie Deployment at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
@@ -37,28 +41,21 @@ git reset --hard "origin/$TARGET_BRANCH"
 
 echo ">>> [2/7] Installing production dependencies for Backend API..."
 cd "$APP_DIR/Wapto-api"
-if [ -f package-lock.json ]; then
-    npm ci --omit=dev --silent
-else
-    npm install --omit=dev --silent
-fi
+rm -f package-lock.json
+npm install --omit=dev --silent
 
 echo ">>> [3/7] Compiling Tenant Frontend (Next.js)..."
 cd "$APP_DIR/Wapto-frontend"
-if [ -f package-lock.json ]; then
-    npm ci --silent
-else
-    npm install --silent
-fi
+rm -f package-lock.json
+npm install --silent
+rm -rf .next
 npm run build
 
 echo ">>> [4/7] Compiling Super Admin Portal (Next.js)..."
 cd "$APP_DIR/Wapto-admin"
-if [ -f package-lock.json ]; then
-    npm ci --silent
-else
-    npm install --silent
-fi
+rm -f package-lock.json
+npm install --silent
+rm -rf .next
 npm run build
 
 # Validate or auto-generate NEXTAUTH_SECRET if missing in frontend

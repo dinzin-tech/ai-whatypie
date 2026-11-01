@@ -133,7 +133,7 @@ const CKEditorInner = ({ value, onChange, onReady, placeholder = "Type your mess
         editor={ClassicEditor}
         data={value}
         config={{
-          licenseKey: "GPL",
+          licenseKey: process.env.NEXT_PUBLIC_CKEDITOR_LICENSE_KEY || "GPL",
           placeholder,
           plugins: PLUGINS,
           toolbar: TOOLBAR,
