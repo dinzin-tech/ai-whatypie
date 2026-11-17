@@ -237,7 +237,10 @@ class UnifiedWhatsAppService {
         if (templateVariables && Object.keys(templateVariables).length > 0) {
           const bodyParams = Object.keys(templateVariables).map(key => ({
             type: 'text',
-            text: String(templateVariables[key]),
+            text: String(templateVariables[key] ?? '')
+              .replace(/[\r\n\t]+/g, ' ')
+              .replace(/\s{4,}/g, '   ')
+              .trim(),
             parameter_name: key
           }));
 

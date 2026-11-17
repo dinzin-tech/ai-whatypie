@@ -20,6 +20,41 @@ import { normalizeStoredPhone } from '../../../utils/phone-normalization.js';
 const WHATSAPP_API_VERSION = 'v22.0';
 const WHATSAPP_GRAPH_API_APP_URL = 'https://graph.facebook.com';
 
+const sanitizeTemplateParamText = (val) => {
+  if (val == null) return '';
+  return String(val)
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s{4,}/g, '   ')
+    .trim();
+};
+
+const sanitizeTemplateComponents = (components) => {
+  if (!Array.isArray(components)) return components;
+  return components.map((comp) => {
+    if (!comp) return comp;
+    const cleanComp = { ...comp };
+    if (Array.isArray(cleanComp.parameters)) {
+      cleanComp.parameters = cleanComp.parameters.map((p) => {
+        if (!p) return p;
+        if (p.type === 'text' && p.text !== undefined) {
+          return { ...p, text: sanitizeTemplateParamText(p.text) };
+        }
+        return p;
+      });
+    }
+    if (Array.isArray(cleanComp.cards)) {
+      cleanComp.cards = cleanComp.cards.map((card) => {
+        if (!card) return card;
+        return {
+          ...card,
+          components: sanitizeTemplateComponents(card.components)
+        };
+      });
+    }
+    return cleanComp;
+  });
+};
+
 const MESSAGE_TYPES = {
   TEXT: 'text',
   IMAGE: 'image',
@@ -201,7 +236,7 @@ export default class BusinessAPIProvider extends BaseProvider {
             }));
             return { ...comp, cards: resolvedCards };
           }));
-          payload.template.components = resolvedComponents;
+          payload.template.components = sanitizeTemplateComponents(resolvedComponents);
         }
 
         console.log('Template payload being sent to WhatsApp:', JSON.stringify(payload, null, 2));

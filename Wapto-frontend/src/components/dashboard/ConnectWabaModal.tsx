@@ -5,8 +5,10 @@ import { ROUTES } from "@/src/constants";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/src/elements/ui/dialog";
 import { cn } from "@/src/lib/utils";
 import { useConnectionMutation } from "@/src/redux/api/whatsappApi";
+import { useGetWorkspacesQuery } from "@/src/redux/api/workspaceApi";
 import { useEnabledConnectionMethods } from "@/src/hooks/useEnabledConnectionMethods";
-import { useAppSelector } from "@/src/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/src/redux/hooks";
+import { setWorkspace } from "@/src/redux/reducers/workspaceSlice";
 import { ConnectWabaModalProps } from "@/src/types/dashboard";
 import { useEmbeddedSignup } from "@/src/utils/hooks/useEmbeddedSignup";
 import { MessageCircle, QrCode, Settings2, ShieldCheck } from "lucide-react";
@@ -18,8 +20,10 @@ import { toast } from "sonner";
 const ConnectWabaModal = ({ isOpen, onClose }: ConnectWabaModalProps) => {
   const { t } = useTranslation();
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [isConnecting, setIsConnecting] = useState(false);
   const [connection] = useConnectionMutation();
+  const { data: workspacesData, refetch: refetchWorkspaces } = useGetWorkspacesQuery();
   const { selectedWorkspace } = useAppSelector((state: any) => state.workspace);
   const { enabled, hasAny } = useEnabledConnectionMethods();
 
@@ -27,7 +31,22 @@ const ConnectWabaModal = ({ isOpen, onClose }: ConnectWabaModalProps) => {
     async (code: string, signupData: any) => {
       try {
         setIsConnecting(true);
-        await connection({ code, signupData, workspace_id: selectedWorkspace?._id }).unwrap();
+        const res: any = await connection({
+          code,
+          signupData,
+          workspace_id: selectedWorkspace?._id,
+        }).unwrap();
+
+        if (res?.success) {
+          const { data: updatedWorkspaces } = await refetchWorkspaces();
+          if (updatedWorkspaces?.data) {
+            const currentWs = updatedWorkspaces.data.find((ws: any) => ws._id === selectedWorkspace?._id);
+            if (currentWs) {
+              dispatch(setWorkspace(currentWs));
+            }
+          }
+        }
+
         toast.success(t("connect_success"));
         onClose();
       } catch (error: any) {
@@ -36,7 +55,7 @@ const ConnectWabaModal = ({ isOpen, onClose }: ConnectWabaModalProps) => {
         setIsConnecting(false);
       }
     },
-    [connection, selectedWorkspace?._id, onClose, t]
+    [connection, selectedWorkspace?._id, onClose, t, refetchWorkspaces, dispatch]
   );
 
   const { startSignup, fbReady } = useEmbeddedSignup(handleFinish);

@@ -1872,9 +1872,20 @@ export const getEmbbededSignupConnection = async (req, res) => {
       display_phone_number = phoneNumberId;
     }
 
-    if (workspace_id) {
+    let targetWorkspaceId = workspace_id || null;
+    if (!targetWorkspaceId) {
+      const defaultWs = await Workspace.findOne({
+        user_id: userId,
+        deleted_at: null
+      }).sort({ createdAt: 1 }).lean();
+      if (defaultWs) {
+        targetWorkspaceId = defaultWs._id;
+      }
+    }
+
+    if (targetWorkspaceId) {
       const existingWaba = await WhatsappWaba.findOne({
-        workspace_id: workspace_id,
+        workspace_id: targetWorkspaceId,
         whatsapp_business_account_id: { $ne: wabaId }
       });
 
@@ -1898,7 +1909,7 @@ export const getEmbbededSignupConnection = async (req, res) => {
         business_id: businessId,
         app_id: APP_ID,
         access_token: accessToken,
-        workspace_id,
+        workspace_id: targetWorkspaceId,
         name: wabaName,
         connection_status: 'connected',
         provider: 'business_api',
@@ -1907,7 +1918,7 @@ export const getEmbbededSignupConnection = async (req, res) => {
     } else {
       waba.access_token = accessToken || waba.access_token;
       if (businessId) waba.business_id = businessId;
-      waba.workspace_id = workspace_id || waba.workspace_id;
+      waba.workspace_id = targetWorkspaceId || waba.workspace_id;
       waba.name = wabaName;
       waba.connection_status = 'connected';
       waba.provider = 'business_api';
@@ -1954,7 +1965,7 @@ export const getEmbbededSignupConnection = async (req, res) => {
         app_id: APP_ID,
         is_active: true
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     let wabaConfig = await WabaConfiguration.findOne({ waba_id: waba._id });
@@ -1963,8 +1974,8 @@ export const getEmbbededSignupConnection = async (req, res) => {
       await WabaConfiguration.create({ waba_id: waba._id });
     }
 
-    if (workspace_id) {
-      await Workspace.findByIdAndUpdate(workspace_id, {
+    if (targetWorkspaceId) {
+      await Workspace.findByIdAndUpdate(targetWorkspaceId, {
         waba_id: waba._id,
         waba_type: 'business_api',
         connection_status: 'connected'
